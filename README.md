@@ -174,3 +174,13 @@ d:\bai\BTL\
 5. **Ảnh sản phẩm mẫu:**
    - Ảnh catalog được lấy từ CDN sản phẩm của Bách Hóa Xanh và cần kết nối Internet để tải.
    - Với mặt hàng không có ảnh phù hợp, dữ liệu mẫu dùng sản phẩm thay thế và đồng bộ lại tên/ảnh trong các nhiệm vụ bổ sung; LocalStorage cũng chỉ tự cập nhật những ảnh và tên mẫu cũ đã nhận diện.
+
+## THÀNH VIÊN VÀ PHÂN CÔNG VAI TRÒ
+
+| Thành viên | Họ và tên | Mã sinh viên | Lớp | Phân công màn hình |
+|---|---|---|---|---|
+| SV1 | Trần Quốc Khánh | 2551060637 | 67CNTT2 | Khách mua sắm: Tìm kiếm sản phẩm, Vị trí sản phẩm & Bản đồ kệ, Gợi ý sản phẩm thay thế AI. Quản trị viên: Quản lý sản phẩm. |
+| SV2 | Trần Nhật Quang | 2451271154 | 66ANM1 | Nhân viên cửa hàng: Khu vực & Kệ hàng, Kiểm kê kệ hàng, Nhiệm vụ bổ sung hàng. Quản trị viên: Quản lý khu vực & Kệ hàng. |
+| SV3 | Trần Ngọc Hoàng | 2451271119 | 66ANM1 | Quản lý cửa hàng: Bảng điều hành trung tâm, Kanban điều phối bổ sung hàng, Phân tích bán lẻ & AI Insights. Quản trị viên: Quản lý người dùng. |
+
+Chi tiết mục tiêu, nhiệm vụ, CRUD/trạng thái, tính năng AI và công việc dự kiến của từng màn hình xem tại [Bảng kiểm kê màn hình SmartShelf](./BANG_KIEM_KE_MAN_HINH.md).
