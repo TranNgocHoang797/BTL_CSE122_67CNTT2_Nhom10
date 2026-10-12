@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bảng Kanban điều phối bổ sung hàng · SmartShelf Quản lý</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .kanban-toolbar {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 14px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .kanban-card.dragging {
+      opacity: 0.45;
+      transform: scale(0.98);
+    }
+    .kanban-column.drag-over {
+      background-color: #ecfdf5;
+      border-color: var(--primary);
+    }
+    .quick-move-btn {
+      background: none;
+      border: 1px solid var(--border-light);
+      border-radius: 4px;
+      font-size: 0.72rem;
+      padding: 2px 6px;
+      cursor: pointer;
+      color: var(--text-secondary);
+    }
+    .quick-move-btn:hover {
+      background-color: var(--bg-subtle);
+      color: var(--text-main);
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace" style="padding-bottom: 20px;">
+      <!-- Page Header -->
+      <div class="ss-page-head" style="margin-bottom: 16px;">
+        <div class="ss-page-title-box">
+          <h1>Quản lý cửa hàng · Bảng điều phối bổ sung hàng (Restock Kanban Board)</h1>
+          <p class="ss-page-subtitle">Kéo thả để điều phối tiến trình nhập hàng từ kho lên kệ. 6 cột trạng thái phản ánh chính xác chu kỳ làm việc thực tế.</p>
+        </div>
+        <div class="ss-page-actions">
+          <button class="btn btn-secondary" onclick="exportKanbanData()">
+            <span>📤</span>
+            <span>Xuất dữ liệu</span>
+          </button>
+          <button class="btn btn-primary" onclick="openNewTaskModal()">
+            <span>＋</span>
+            <span>Tạo nhiệm vụ bổ sung</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Kanban Toolbar -->
+      <div class="kanban-toolbar">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <!-- Filter Zone -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Khu vực:</label>
+            <select id="kb-filter-zone" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="renderKanbanBoard()">
+              <option value="all">Tất cả khu vực</option>
+              <option value="Z-A">Khu A – Thực phẩm khô</option>
+              <option value="Z-B">Khu B – Đồ uống</option>
+              <option value="Z-C">Khu C – Mỹ phẩm</option>
+              <option value="Z-D">Khu D – Gia dụng</option>
+              <option value="Z-E">Khu E – Bánh kẹo</option>
+            </select>
+          </div>
+
+          <!-- Filter Assignee -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Nhân viên:</label>
+            <select id="kb-filter-assignee" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="renderKanbanBoard()">
+              <option value="all">Tất cả nhân viên ca</option>
+              <option value="U-03">Lê Văn Tùng</option>
+              <option value="U-04">Phạm Thị Mai</option>
+              <option value="U-05">Đỗ Quốc Huy</option>
+              <option value="U-06">Vũ Ngọc Lan</option>
+            </select>
+          </div>
+
+          <!-- Search in board -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="text" id="kb-search" class="form-control" placeholder="Tìm theo tên SP hoặc mã RSK..." style="width: 220px; padding: 6px 12px; font-size: 0.82rem;" oninput="renderKanbanBoard()">
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--text-muted);">
+          <span>Kéo thả card để chuyển cột</span>
+          <button class="btn btn-secondary btn-sm" onclick="renderKanbanBoard()">Làm mới</button>
+        </div>
+      </div>
+
+      <!-- Kanban 6 Columns Container -->
+      <div class="kanban-board-container" id="kanban-board">
+        <!-- 1. Đang chờ -->
+        <div class="kanban-column" data-status="pending" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'pending')">
+          <div class="kanban-column-header">
+            <div class="kanban-column-title">
+              <span style="color:#64748b">⏳</span>
+              <span>Đang chờ</span>
+            </div>
+            <span class="kanban-count-badge" id="count-pending">0</span>
+          </div>
+          <div class="kanban-card-list" id="col-pending"></div>
+        </div>
+
+        <!-- 2. Ưu tiên cao -->
+        <div class="kanban-column" data-status="high_priority" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'high_priority')">
+          <div class="kanban-column-header" style="border-top: 3px solid #dc2626">
+            <div class="kanban-column-title">
+              <span style="color:#dc2626">⚡</span>
+              <span>Ưu tiên cao (AI)</span>
+            </div>
+            <span class="kanban-count-badge" id="count-high_priority" style="background:#fef2f2;color:#dc2626">0</span>
+          </div>
+          <div class="kanban-card-list" id="col-high_priority"></div>
+        </div>
+
+        <!-- 3. Đang xử lý -->
+        <div class="kanban-column" data-status="in_progress" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'in_progress')">
+          <div class="kanban-column-header" style="border-top: 3px solid #0284c7">
+            <div class="kanban-column-title">
+              <span style="color:#0284c7">🔄</span>
+              <span>Đang xử lý</span>
+            </div>
+            <span class="kanban-count-badge" id="count-in_progress" style="background:#f0f9ff;color:#0284c7">0</span>
+          </div>
+          <div class="kanban-card-list" id="col-in_progress"></div>
+        </div>
+
+        <!-- 4. Chờ xử lý / Đợi duyệt -->
+        <div class="kanban-column" data-status="on_hold" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'on_hold')">
+          <div class="kanban-column-header" style="border-top: 3px solid #d97706">
+            <div class="kanban-column-title">
+              <span style="color:#d97706">⏸</span>
+              <span>Chờ xử lý</span>
+            </div>
+            <span class="kanban-count-badge" id="count-on_hold" style="background:#fffbeb;color:#d97706">0</span>
+          </div>
+          <div class="kanban-card-list" id="col-on_hold"></div>
+        </div>
+
+        <!-- 5. Hoàn thành -->
+        <div class="kanban-column" data-status="completed" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'completed')">
+          <div class="kanban-column-header" style="border-top: 3px solid #16a34a">
+            <div class="kanban-column-title">
+              <span style="color:#16a34a">✓</span>
+              <span>Hoàn thành</span>
+            </div>
+            <span class="kanban-count-badge" id="count-completed" style="background:#f0fdf4;color:#16a34a">0</span>
+          </div>
+          <div class="kanban-card-list" id="col-completed"></div>
+        </div>
+
+        <!-- 6. Từ chối / Hủy -->
+        <div class="kanban-column" data-status="rejected" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event, 'rejected')">
+          <div class="kanban-column-header" style="border-top: 3px solid #64748b">
+            <div class="kanban-column-title">
+              <span style="color:#64748b">✕</span>
+              <span>Từ chối / Hủy</span>
+            </div>
+            <span class="kanban-count-badge" id="count-rejected">0</span>
+          </div>
+          <div class="kanban-card-list" id="col-rejected"></div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let draggedTaskId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      renderKanbanBoard();
+    });
+
+    function renderKanbanBoard() {
+      const zoneFilter = document.getElementById('kb-filter-zone').value;
+      const assigneeFilter = document.getElementById('kb-filter-assignee').value;
+      const searchQuery = (document.getElementById('kb-search').value || '').trim().toLowerCase();
+
+      let tasks = SS_Store.all('restockTasks');
+
+      if (zoneFilter !== 'all') {
+        tasks = tasks.filter(t => t.zoneId === zoneFilter);
+      }
+      if (assigneeFilter !== 'all') {
+        tasks = tasks.filter(t => t.assigneeId === assigneeFilter);
+      }
+      if (searchQuery) {
+        tasks = tasks.filter(t => 
+          t.code.toLowerCase().includes(searchQuery) ||
+          t.productName.toLowerCase().includes(searchQuery) ||
+          t.shelfCode.toLowerCase().includes(searchQuery)
+        );
+      }
+
+      const columns = ['pending', 'high_priority', 'in_progress', 'on_hold', 'completed', 'rejected'];
+
+      columns.forEach(col => {
+        const colContainer = document.getElementById(`col-${col}`);
+        const countBadge = document.getElementById(`count-${col}`);
+        
+        let colTasks = tasks.filter(t => {
+          if (col === 'rejected') return t.status === 'rejected' || t.status === 'cancelled';
+          return t.status === col;
+        });
+
+        countBadge.textContent = colTasks.length;
+
+        if (!colTasks.length) {
+          colContainer.innerHTML = '<div style="padding:24px 10px;text-align:center;color:var(--text-light);font-size:0.8rem">Không có nhiệm vụ</div>';
+          return;
+        }
+
+        colContainer.innerHTML = colTasks.map(t => {
+          let priorityTag = '';
+          if (t.priority === 'critical') {
+            priorityTag = '<span class="badge badge-danger" style="font-size:0.68rem">Khẩn cấp</span>';
+          } else if (t.priority === 'high') {
+            priorityTag = '<span class="badge badge-warning" style="font-size:0.68rem">Ưu tiên</span>';
+          } else {
+            priorityTag = '<span class="badge badge-neutral" style="font-size:0.68rem">Thường</span>';
+          }
+
+          return `
+            <div class="kanban-card" draggable="true" ondragstart="handleDragStart(event, '${t.id}')" ondragend="handleDragEnd(event)" onclick="openTaskModal('${t.id}')">
+              <div class="kanban-card-head">
+                <span style="font-weight:700;font-size:0.78rem;color:var(--primary)">${t.code}</span>
+                ${priorityTag}
+              </div>
+
+              <div class="kanban-card-title">${t.productName}</div>
+
+              <div style="display:flex;align-items:center;justify-content:space-between;font-size:0.78rem;color:var(--text-secondary);margin-bottom:6px">
+                <span>📍 <strong>Kệ ${t.shelfCode}</strong> (${t.zoneName})</span>
+                <span style="font-weight:700;color:var(--primary)">+${t.neededQty} món</span>
+              </div>
+
+              ${t.aiReason ? `
+                <div style="font-size:0.72rem;color:var(--text-muted);background:var(--bg-subtle);padding:5px 8px;border-radius:4px;margin-bottom:8px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">
+                  💡 ${t.aiReason}
+                </div>
+              ` : ''}
+
+              <div class="kanban-card-meta">
+                <div style="display:flex;align-items:center;gap:6px">
+                  <img src="${t.assigneeAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=80&q=80'}" style="width:20px;height:20px;border-radius:50%;object-fit:cover">
+                  <span style="font-size:0.75rem">${t.assigneeName ? t.assigneeName.split(' ').slice(-1) : 'Chưa gán'}</span>
+                </div>
+                <span style="font-size:0.7rem;color:var(--text-light)">Tồn: ${t.currentQty}</span>
+              </div>
+            </div>
+          `;
+        }).join('');
+      });
+    }
+
+    /* Drag & Drop Handlers */
+    function handleDragStart(e, id) {
+      draggedTaskId = id;
+      e.target.classList.add('dragging');
+      e.dataTransfer.setData('text/plain', id);
+    }
+
+    function handleDragEnd(e) {
+      e.target.classList.remove('dragging');
+      document.querySelectorAll('.kanban-column').forEach(c => c.classList.remove('drag-over'));
+    }
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      const col = e.currentTarget;
+      col.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      e.currentTarget.classList.remove('drag-over');
+    }
+
+    function handleDrop(e, newStatus) {
+      e.preventDefault();
+      e.currentTarget.classList.remove('drag-over');
+      if (!draggedTaskId) return;
+
+      const task = SS_Store.getById('restockTasks', draggedTaskId);
+      if (task) {
+        if (newStatus === 'completed' && task.status !== 'completed') {
+          if (!SS_Store.completeRestockTask(draggedTaskId)) {
+            SS_App.toast(`Không thể hoàn thành ${task.code}: không tìm thấy sản phẩm ${task.sku}.`, 'error');
+            draggedTaskId = null;
+            return;
+          }
+        } else {
+          SS_Store.update('restockTasks', draggedTaskId, {
+            status: newStatus,
+            statusLabel: getStatusLabel(newStatus)
+          });
+        }
+        SS_App.toast(`Đã chuyển nhiệm vụ ${task.code} sang “${getStatusLabel(newStatus)}”!`, 'success');
+        renderKanbanBoard();
+      }
+      draggedTaskId = null;
+    }
+
+    function getStatusLabel(s) {
+      switch(s) {
+        case 'pending': return 'Đang chờ';
+        case 'high_priority': return 'Ưu tiên cao';
+        case 'in_progress': return 'Đang xử lý';
+        case 'on_hold': return 'Chờ xử lý';
+        case 'completed': return 'Hoàn thành';
+        case 'rejected': return 'Từ chối';
+        default: return s;
+      }
+    }
+
+    function openTaskModal(id) {
+      const task = SS_Store.getById('restockTasks', id);
+      if (!task) return;
+
+      const users = SS_Store.all('users').filter(u => u.role === 'associate');
+
+      SS_App.showModal({
+        title: `Điều phối nhiệm vụ: ${task.code}`,
+        body: `
+          <div style="display:flex;gap:16px;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid var(--border-light)">
+            <img src="${task.productImage || ''}" style="width:68px;height:68px;border-radius:var(--radius-md);object-fit:cover;border:1px solid var(--border-light)">
+            <div>
+              <div style="font-weight:700;font-size:1.05rem;color:var(--text-main)">${task.productName}</div>
+              <div style="font-size:0.8rem;color:var(--text-muted)">SKU: ${task.sku} · Nguồn: ${task.source}</div>
+              <div style="margin-top:4px;font-size:0.85rem;color:var(--primary);font-weight:700">
+                Đích: Kệ ${task.shelfCode} (${task.zoneName}) · Tồn hiện tại: ${task.currentQty}
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Chuyển cột trạng thái:</label>
+              <select class="form-control" id="modal-task-status">
+                <option value="pending" ${task.status === 'pending' ? 'selected' : ''}>⏳ Đang chờ</option>
+                <option value="high_priority" ${task.status === 'high_priority' ? 'selected' : ''}>⚡ Ưu tiên cao</option>
+                <option value="in_progress" ${task.status === 'in_progress' ? 'selected' : ''}>🔄 Đang xử lý</option>
+                <option value="on_hold" ${task.status === 'on_hold' ? 'selected' : ''}>⏸ Chờ xử lý</option>
+                <option value="completed" ${task.status === 'completed' ? 'selected' : ''}>✓ Hoàn thành</option>
+                <option value="rejected" ${task.status === 'rejected' ? 'selected' : ''}>✕ Từ chối / Hủy</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Phân công nhân viên:</label>
+              <select class="form-control" id="modal-task-assignee">
+                ${users.map(u => `
+                  <option value="${u.id}" ${task.assigneeId === u.id ? 'selected' : ''}>${u.name} (${u.zoneName || 'Toàn sàn'})</option>
+                `).join('')}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Số lượng cần bổ sung:</label>
+              <input type="number" class="form-control" id="modal-task-qty" value="${task.neededQty}" min="1" step="1" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mức độ ưu tiên:</label>
+              <select class="form-control" id="modal-task-priority">
+                <option value="critical" ${task.priority === 'critical' ? 'selected' : ''}>Khẩn cấp (5/5)</option>
+                <option value="high" ${task.priority === 'high' ? 'selected' : ''}>Ưu tiên cao (4/5)</option>
+                <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Trung bình (3/5)</option>
+                <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Thấp (2/5)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Lý do điều phối / Đề xuất AI:</label>
+            <textarea class="form-control" id="modal-task-reason" rows="2">${task.aiReason || ''}</textarea>
+          </div>
+        `,
+        footer: `
+          <button class="btn btn-secondary" onclick="SS_App.closeModal()">Đóng</button>
+          <button class="btn btn-primary" onclick="saveTaskModalChanges('${task.id}')">Lưu cập nhật</button>
+        `
+      });
+    }
+
+    function saveTaskModalChanges(id) {
+      const status = document.getElementById('modal-task-status').value;
+      const assigneeId = document.getElementById('modal-task-assignee').value;
+      const assignee = SS_Store.getById('users', assigneeId);
+      const quantityInput = document.getElementById('modal-task-qty');
+      const neededQty = Number(quantityInput.value);
+      if (!Number.isInteger(neededQty) || neededQty < 1) {
+        quantityInput.setCustomValidity('Số lượng phải là số nguyên lớn hơn 0.');
+        quantityInput.reportValidity();
+        quantityInput.addEventListener('input', () => quantityInput.setCustomValidity(''), { once: true });
+        return;
+      }
+      const priority = document.getElementById('modal-task-priority').value;
+      const aiReason = document.getElementById('modal-task-reason').value;
+      const task = SS_Store.getById('restockTasks', id);
+      if (!task) {
+        SS_App.toast('Không tìm thấy nhiệm vụ để cập nhật.', 'error');
+        return;
+      }
+
+      if (status === 'completed' && task.status !== 'completed' && !SS_Store.completeRestockTask(id)) {
+        SS_App.toast(`Không thể hoàn thành ${task.code}: không tìm thấy sản phẩm ${task.sku}.`, 'error');
+        return;
+      }
+
+      SS_Store.update('restockTasks', id, {
+        status,
+        statusLabel: getStatusLabel(status),
+        assigneeId,
+        assigneeName: assignee ? assignee.name : 'Nhân viên',
+        assigneeAvatar: assignee ? assignee.avatar : '',
+        neededQty,
+        priority,
+        aiReason
+      });
+
+      SS_App.closeModal();
+      SS_App.toast('Đã cập nhật thông tin nhiệm vụ thành công!', 'success');
+      renderKanbanBoard();
+    }
+
+    function openNewTaskModal() {
+      const products = SS_Store.all('products');
+      const users = SS_Store.all('users').filter(u => u.role === 'associate');
+
+      SS_App.showModal({
+        title: 'Thêm nhiệm vụ bổ sung hàng mới',
+        body: `
+          <div class="form-group">
+            <label class="form-label">Chọn sản phẩm cần nhập thêm: <span class="required">*</span></label>
+            <select class="form-control" id="new-task-sku">
+              ${products.map(p => `
+                <option value="${p.sku}" data-shelf="${p.shelfCode}" data-zone="${p.zoneId}">${p.name} (${p.sku}) · Kệ ${p.shelfCode}</option>
+              `).join('')}
+            </select>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Số lượng cần bổ sung:</label>
+              <input type="number" class="form-control" id="new-task-qty" value="15" min="1">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Mức ưu tiên:</label>
+              <select class="form-control" id="new-task-priority">
+                <option value="high" selected>Ưu tiên cao (4/5)</option>
+                <option value="critical">Khẩn cấp (5/5)</option>
+                <option value="medium">Trung bình (3/5)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Phân công người thực hiện:</label>
+            <select class="form-control" id="new-task-user">
+              ${users.map(u => `<option value="${u.id}">${u.name} (${u.zoneName || 'Nhân viên'})</option>`).join('')}
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Ghi chú điều phối:</label>
+            <textarea class="form-control" id="new-task-note" rows="2" placeholder="Ví dụ: Lấy từ kho chính, cẩn thận hàng dễ vỡ..."></textarea>
+          </div>
+        `,
+        footer: `
+          <button class="btn btn-secondary" onclick="SS_App.closeModal()">Hủy</button>
+          <button class="btn btn-primary" onclick="submitNewTask()">Tạo nhiệm vụ</button>
+        `
+      });
+    }
+
+    function submitNewTask() {
+      const select = document.getElementById('new-task-sku');
+      const sku = select.value;
+      const opt = select.selectedOptions[0];
+      const shelfCode = opt.getAttribute('data-shelf');
+      const zoneId = opt.getAttribute('data-zone');
+      const qty = Number(document.getElementById('new-task-qty').value) || 10;
+      const priority = document.getElementById('new-task-priority').value;
+      const userId = document.getElementById('new-task-user').value;
+      const user = SS_Store.getById('users', userId);
+      const note = document.getElementById('new-task-note').value;
+      const prod = SS_Store.find('products', p => p.sku === sku);
+
+      const newTask = {
+        code: 'RSK-' + Math.floor(Math.random() * 800 + 200),
+        sku: sku,
+        productName: prod ? prod.name : 'Sản phẩm',
+        productImage: prod ? prod.image : '',
+        zoneId: zoneId,
+        zoneName: prod ? prod.zoneName : 'Khu vực',
+        shelfCode: shelfCode,
+        neededQty: qty,
+        currentQty: prod ? prod.stock : 0,
+        priority: priority,
+        priorityLabel: priority === 'critical' ? 'Khẩn cấp' : priority === 'high' ? 'Ưu tiên cao' : 'Trung bình',
+        priorityScore: priority === 'critical' ? 95 : 75,
+        assigneeId: userId,
+        assigneeName: user ? user.name : 'Lê Văn Tùng',
+        assigneeAvatar: user ? user.avatar : '',
+        source: 'Quản lý điều phối',
+        aiReason: note || 'Quản lý tạo trực tiếp từ Kanban Board.',
+        status: 'pending',
+        statusLabel: 'Đang chờ',
+        dueDate: new Date(Date.now() + 3600000 * 3).toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      SS_Store.insert('restockTasks', newTask);
+      SS_App.closeModal();
+      SS_App.toast(`Đã tạo nhiệm vụ ${newTask.code} thành công!`, 'success');
+      renderKanbanBoard();
+    }
+
+    function exportKanbanData() {
+      const rows = SS_Store.all('restockTasks').map(task => [
+        task.code,
+        task.productName,
+        task.sku,
+        task.zoneName,
+        task.shelfCode,
+        task.neededQty,
+        task.currentQty,
+        task.priorityLabel || task.priority,
+        task.statusLabel || task.status,
+        task.assigneeName,
+        task.dueDate,
+        task.aiReason
+      ]);
+      SS_App.downloadCsv('nhiem-vu-restock.csv',
+        ['Mã nhiệm vụ', 'Sản phẩm', 'SKU', 'Khu vực', 'Kệ', 'Số lượng cần bổ sung', 'Tồn hiện tại', 'Ưu tiên', 'Trạng thái', 'Nhân viên', 'Hạn xử lý', 'Lý do'],
+        rows
+      );
+    }
+  </script>
+</body>
+</html>

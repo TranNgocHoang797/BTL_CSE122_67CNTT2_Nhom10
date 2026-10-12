@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../stitch-skills-main/plugins"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "BTL"
+	}
+}

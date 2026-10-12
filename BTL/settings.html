@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cài đặt hệ thống & Hồ sơ · SmartShelf</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace">
+      <!-- Page Header -->
+      <div class="ss-page-head">
+        <div class="ss-page-title-box">
+          <h1>Cài đặt hệ thống &amp; Hồ sơ cá nhân (System Settings)</h1>
+          <p class="ss-page-subtitle">Quản lý thông tin tài khoản đăng nhập hiện tại, cấu hình thiết bị trạm và quản lý bộ nhớ đệm dữ liệu mẫu kiểm thử.</p>
+        </div>
+      </div>
+
+      <div class="settings-layout">
+        <!-- Thông tin người dùng hiện tại -->
+        <div class="card card-pad">
+          <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:16px">Tài khoản đang đăng nhập</h2>
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px">
+            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80" alt="Avatar" id="settings-avatar" style="width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--primary-border)">
+            <div>
+              <div style="font-size:1.15rem;font-weight:800" id="settings-name">Trần Minh Quản</div>
+              <div style="font-size:0.85rem;color:var(--text-muted)" id="settings-role">Quản lý cửa hàng</div>
+              <div style="font-size:0.8rem;color:var(--primary);margin-top:2px" id="settings-zone">Khu A &amp; B</div>
+            </div>
+          </div>
+
+          <div style="background:var(--bg-subtle);padding:14px;border-radius:var(--radius-md);font-size:0.85rem;display:flex;flex-direction:column;gap:8px;margin-bottom:18px">
+            <div>Username: <strong id="settings-username">quan.tm</strong></div>
+            <div>Email: <strong id="settings-email">quan.tm@smartshelf.vn</strong></div>
+            <div>Số điện thoại: <strong id="settings-phone">0901 111 222</strong></div>
+            <div>Trạng thái: <span class="badge badge-success">Đang hoạt động</span></div>
+          </div>
+
+          <a href="login.html" class="btn btn-secondary" style="width:100%">
+            <span>🚪</span>
+            <span>Đăng xuất / Đổi vai trò</span>
+          </a>
+        </div>
+
+        <!-- Cài đặt & Khôi phục dữ liệu mẫu -->
+        <div class="card card-pad">
+          <h2 style="font-size:1.1rem;font-weight:700;margin-bottom:16px">Bộ nhớ &amp; Dữ liệu kiểm thử BTL</h2>
+          <p style="font-size:0.88rem;color:var(--text-secondary);line-height:1.5;margin-bottom:20px">
+            Toàn bộ các thay đổi khi bạn thêm sản phẩm, nộp phiếu kiểm kê, duyệt nhiệm vụ restock đều được lưu trữ trực tiếp vào LocalStorage trình duyệt. Bạn có thể khôi phục lại dữ liệu mẫu gốc ban đầu bất cứ lúc nào.
+          </p>
+
+          <div style="background:#fef2f2;border:1px solid #fecaca;border-radius:var(--radius-md);padding:16px;margin-bottom:20px">
+            <h3 style="font-size:0.95rem;font-weight:700;color:var(--danger);margin-bottom:6px">Khôi phục hạt giống dữ liệu (Seed Data Reset)</h3>
+            <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px">
+              Thao tác này sẽ đặt lại toàn bộ 20 sản phẩm, 12 kệ hàng, 5 khu vực, các phiếu kiểm kê và kịch bản dị thường AI về trạng thái ban đầu của bài thuyết trình.
+            </p>
+            <button class="btn btn-danger btn-sm" onclick="resetDatabase()">
+              <span>🔄 Khôi phục dữ liệu mẫu ngay</span>
+            </button>
+          </div>
+
+          <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:12px">Cấu hình kết nối siêu thị SmartShelf Mart</h3>
+          <div style="display:flex;flex-direction:column;gap:12px;font-size:0.85rem">
+            <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-light)">
+              <span style="color:var(--text-secondary)">Chi nhánh siêu thị:</span>
+              <strong>SmartShelf Mart · Cầu Giấy, Hà Nội</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-light)">
+              <span style="color:var(--text-secondary)">Phiên bản phần mềm:</span>
+              <strong style="color:var(--primary)">SmartShelf OS v2.6 Enterprise (2026 Edition)</strong>
+            </div>
+            <div style="display:flex;justify-content:space-between;padding-bottom:8px;border-bottom:1px solid var(--border-light)">
+              <span style="color:var(--text-secondary)">Thuật toán AI:</span>
+              <strong>Edge Machine Learning &amp; Computer Vision Anomaly Detection</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      loadUserProfile();
+    });
+
+    function loadUserProfile() {
+      const u = SS_Store.getCurrentUser();
+      if (!u) return;
+
+      document.getElementById('settings-avatar').src = u.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80';
+      document.getElementById('settings-name').textContent = u.name;
+      document.getElementById('settings-role').textContent = u.roleLabel || 'Quản lý cửa hàng';
+      document.getElementById('settings-zone').textContent = u.zoneName || 'Toàn sàn';
+      document.getElementById('settings-username').textContent = u.username;
+      document.getElementById('settings-email').textContent = u.email;
+      document.getElementById('settings-phone').textContent = u.phone || '0901 111 222';
+    }
+
+    function resetDatabase() {
+      SS_App.confirm({
+        title: 'Xác nhận nạp lại dữ liệu mẫu gốc',
+        message: 'Bạn có chắc muốn xóa các dữ liệu thêm mới và đưa hệ thống về bộ dữ liệu mẫu chuẩn của đề tài CSE122?',
+        confirmText: 'Đồng ý nạp lại',
+        onConfirm: () => {
+          SS_Store.resetToSeed();
+          SS_App.toast('Đã nạp lại dữ liệu mẫu thành công!', 'success');
+          setTimeout(() => location.reload(), 600);
+        }
+      });
+    }
+  </script>
+</body>
+</html>
