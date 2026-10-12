@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nhiệm vụ bổ sung hàng · SmartShelf Nhân viên</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .task-filter-bar {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace">
+      <!-- Page Header -->
+      <div class="ss-page-head">
+        <div class="ss-page-title-box">
+          <h1>Nhân viên cửa hàng · Nhiệm vụ bổ sung hàng (Restock Tasks)</h1>
+          <p class="ss-page-subtitle">Danh sách các yêu cầu điều động hàng hóa từ kho lên kệ bán lẻ. Tích hợp thuật toán AI Restock Priority xếp lịch thông minh.</p>
+        </div>
+        <div class="ss-page-actions">
+          <div class="ai-simulation-controller">
+            <span>Mô phỏng AI:</span>
+            <select id="ai-restock-mode" onchange="runAiRestockAnalysis(this.value)">
+              <option value="normal">Độ tin cậy cao (94%)</option>
+              <option value="low_confidence">Độ tin cậy thấp (44%)</option>
+              <option value="insufficient_data">Không đủ dữ liệu</option>
+              <option value="error">Mô phỏng Lỗi API</option>
+            </select>
+          </div>
+          <button class="btn btn-primary" onclick="runAiRestockAnalysis()">
+            <span>🧠</span>
+            <span>Khởi chạy AI Restock Priority</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- AI Restock Recommendation Box -->
+      <div id="ai-restock-box" class="ai-card" style="margin-bottom: 24px; display: none;">
+        <div class="ai-card-head">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div class="ai-badge-brand">✨ AI RESTOCK PRIORITY v2.6</div>
+            <strong style="font-size: 1rem; color: var(--text-main);" id="ai-restock-title">Đề xuất thứ tự ưu tiên bổ sung hàng</strong>
+          </div>
+          <span class="badge badge-success" id="ai-restock-confidence-badge">Độ tin cậy: 94%</span>
+        </div>
+
+        <p style="font-size: 0.86rem; color: var(--text-secondary); margin-bottom: 12px;" id="ai-restock-desc">
+          Thuật toán đã tính toán khoảng thiếu hụt (Gap), tốc độ tiêu thụ (Velocity) và giờ cao điểm. Dưới đây là 3 kệ cần bổ sung khẩn cấp nhất:
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;" id="ai-restock-items-grid">
+          <!-- Populated by JS -->
+        </div>
+
+        <div class="ai-actions-bar">
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            Nhấn "Áp dụng" để tự động đưa các việc này lên đầu danh sách ca trực.
+          </div>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-secondary btn-sm" onclick="rejectAiPriority()">Từ chối</button>
+            <button class="btn btn-secondary btn-sm" onclick="editAiPriority()">Chỉnh sửa tiêu chí</button>
+            <button class="btn btn-primary btn-sm" onclick="acceptAiPriority()">✓ Chấp nhận &amp; Áp dụng</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter Controls Bar -->
+      <div class="task-filter-bar">
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <!-- Filter status -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Trạng thái:</label>
+            <select id="filter-task-status" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyTaskFilters()">
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Đang chờ</option>
+              <option value="high_priority">Ưu tiên cao</option>
+              <option value="in_progress">Đang xử lý</option>
+              <option value="on_hold">Chờ xử lý</option>
+              <option value="completed">Hoàn thành</option>
+              <option value="rejected">Bị từ chối</option>
+              <option value="cancelled">Đã hủy</option>
+            </select>
+          </div>
+
+          <!-- Filter zone -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Khu vực:</label>
+            <select id="filter-task-zone" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyTaskFilters()">
+              <option value="all">Tất cả khu vực</option>
+              <option value="Z-A">Khu A – Thực phẩm khô</option>
+              <option value="Z-B">Khu B – Đồ uống</option>
+              <option value="Z-C">Khu C – Mỹ phẩm</option>
+              <option value="Z-D">Khu D – Gia dụng</option>
+              <option value="Z-E">Khu E – Bánh kẹo</option>
+            </select>
+          </div>
+
+          <!-- Filter priority -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Mức ưu tiên:</label>
+            <select id="filter-task-priority" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyTaskFilters()">
+              <option value="all">Tất cả mức</option>
+              <option value="critical">Khẩn cấp (5/5)</option>
+              <option value="high">Ưu tiên cao (4/5)</option>
+              <option value="medium">Trung bình (3/5)</option>
+              <option value="low">Thấp (1-2/5)</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <span style="font-size: 0.82rem; color: var(--text-muted);" id="task-count-label">Đang tải...</span>
+        </div>
+      </div>
+
+      <!-- Tasks Table -->
+      <div class="card card-pad">
+        <div class="table-responsive">
+          <table class="data-table restock-task-table">
+            <thead>
+              <tr>
+                <th>Mã việc</th>
+                <th>Sản phẩm &amp; SKU</th>
+                <th>Vị trí kệ đích</th>
+                <th style="text-align: center;">Cần bổ sung</th>
+                <th style="text-align: center;">Tồn hiện tại</th>
+                <th>Mức ưu tiên</th>
+                <th>Người phụ trách</th>
+                <th>Hạn xử lý</th>
+                <th>Trạng thái</th>
+                <th style="text-align: right;">Thao tác nhân viên</th>
+              </tr>
+            </thead>
+            <tbody id="tasks-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let aiPriorityResult = null;
+    let aiRestockOptions = { outOfStockWeight: 3, prioritizePeakHours: true };
+
+    document.addEventListener('DOMContentLoaded', () => {
+      applyTaskFilters();
+      // Tự động phân tích AI nhẹ khi mở trang
+      runAiRestockAnalysis('normal');
+    });
+
+    function applyTaskFilters() {
+      const status = document.getElementById('filter-task-status').value;
+      const zoneId = document.getElementById('filter-task-zone').value;
+      const priority = document.getElementById('filter-task-priority').value;
+
+      let tasks = SS_Store.all('restockTasks');
+
+      if (status !== 'all') {
+        tasks = tasks.filter(t => t.status === status);
+      }
+      if (zoneId !== 'all') {
+        tasks = tasks.filter(t => t.zoneId === zoneId);
+      }
+      if (priority !== 'all') {
+        tasks = tasks.filter(t => t.priority === priority);
+      }
+
+      renderTasksTable(tasks);
+    }
+
+    function renderTasksTable(tasks) {
+      const tbody = document.getElementById('tasks-table-body');
+      const countLabel = document.getElementById('task-count-label');
+      countLabel.textContent = `Tổng cộng: ${tasks.length} nhiệm vụ`;
+
+      if (!tasks.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10">
+              <div class="state-empty" style="padding: 30px;">
+                <div class="state-empty-icon">✓</div>
+                <div class="state-empty-title">Không có nhiệm vụ nào</div>
+                <div class="state-empty-desc">Tất cả các kệ trong phạm vi lọc đều đã được bổ sung đầy đủ.</div>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = tasks.map(t => {
+        let statusBadge = '';
+        switch(t.status) {
+          case 'pending': statusBadge = '<span class="badge badge-neutral">⏳ Đang chờ</span>'; break;
+          case 'high_priority': statusBadge = '<span class="badge badge-danger">⚡ Ưu tiên cao</span>'; break;
+          case 'in_progress': statusBadge = '<span class="badge badge-info">🔄 Đang xử lý</span>'; break;
+          case 'on_hold': statusBadge = '<span class="badge badge-warning">⏸ Chờ xử lý</span>'; break;
+          case 'completed': statusBadge = '<span class="badge badge-success">✓ Hoàn thành</span>'; break;
+          case 'rejected': statusBadge = '<span class="badge badge-danger">✕ Từ chối</span>'; break;
+          case 'cancelled': statusBadge = '<span class="badge badge-neutral">🚫 Đã hủy</span>'; break;
+          default: statusBadge = `<span class="badge badge-neutral">${t.status}</span>`;
+        }
+
+        let priorityBadge = '';
+        if (t.priority === 'critical') priorityBadge = '<span class="badge badge-danger">Khẩn cấp (95+)</span>';
+        else if (t.priority === 'high') priorityBadge = '<span class="badge badge-warning">Ưu tiên cao</span>';
+        else priorityBadge = '<span class="badge badge-neutral">Trung bình</span>';
+
+        return `
+          <tr>
+            <td><strong>${t.code}</strong></td>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                ${t.productImage ? `<img src="${t.productImage}" style="width:36px;height:36px;border-radius:4px;object-fit:cover">` : ''}
+                <div>
+                  <strong style="font-size:0.88rem">${t.productName}</strong>
+                  <div style="font-size:0.75rem;color:var(--text-muted)">${t.sku} · Nguồn: ${t.source}</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <span class="badge badge-info">Kệ ${t.shelfCode}</span>
+              <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px">${t.zoneName}</div>
+            </td>
+            <td style="text-align:center;font-weight:800;color:var(--primary);font-size:1rem">${t.neededQty}</td>
+            <td style="text-align:center;color:${t.currentQty === 0 ? 'var(--danger)' : 'var(--text-secondary)'};font-weight:700">
+              ${t.currentQty}
+            </td>
+            <td>${priorityBadge}</td>
+            <td>
+              <div style="display:flex;align-items:center;gap:6px">
+                <img src="${t.assigneeAvatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80'}" style="width:24px;height:24px;border-radius:50%;object-fit:cover">
+                <span style="font-size:0.82rem">${t.assigneeName}</span>
+              </div>
+            </td>
+            <td style="font-size:0.75rem;color:var(--text-muted)">${SS_App.formatDate(t.dueDate)}</td>
+            <td>${statusBadge}</td>
+            <td style="text-align:right">
+              <div style="display:inline-flex;gap:6px">
+                ${t.status === 'pending' || t.status === 'high_priority' ? `
+                  <button class="btn btn-primary btn-sm" onclick="startTask('${t.id}')">Bắt đầu làm</button>
+                ` : ''}
+                ${t.status === 'in_progress' ? `
+                  <button class="btn btn-primary btn-sm" style="background:#16a34a" onclick="completeTask('${t.id}')">✓ Đã bổ sung</button>
+                ` : ''}
+                ${['pending', 'high_priority', 'in_progress'].includes(t.status) ? `
+                  <button class="btn btn-secondary btn-sm" onclick="reportTaskProblem('${t.id}')" title="Báo kho hết hàng / Từ chối">Báo lỗi</button>
+                ` : ''}
+                <button class="btn btn-secondary btn-sm" onclick="viewTaskDetail('${t.id}')" title="Xem chi tiết">👁</button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function runAiRestockAnalysis(forceMode) {
+      const mode = forceMode || document.getElementById('ai-restock-mode').value;
+      const box = document.getElementById('ai-restock-box');
+      box.style.display = 'block';
+
+      try {
+        const res = await SS_AI.analyzeRestockPriority({ forceMode: mode, ...aiRestockOptions });
+        aiPriorityResult = res;
+
+        if (res.status === 'insufficient_data') {
+          box.innerHTML = `
+            <div class="state-empty" style="padding:20px">
+              <div class="state-empty-icon" style="color:var(--warning)">ℹ️</div>
+              <div class="state-empty-title">${res.title}</div>
+              <div class="state-empty-desc">${res.message}</div>
+              <div style="display:flex;justify-content:center;gap:8px">
+                <button class="btn btn-secondary btn-sm" onclick="box.style.display='none'">Đóng</button>
+                <button class="btn btn-primary btn-sm" onclick="box.style.display='none'; document.getElementById('filter-task-status').focus()">Tạo việc thủ công</button>
+              </div>
+            </div>
+          `;
+          return;
+        }
+
+        const badge = document.getElementById('ai-restock-confidence-badge');
+        if (res.status === 'low_confidence') {
+          badge.className = 'badge badge-warning';
+          badge.textContent = `Độ tin cậy thấp: ${res.confidenceScore}% (Dữ liệu biến động)`;
+        } else {
+          badge.className = 'badge badge-success';
+          badge.textContent = `Độ tin cậy cao: ${res.confidenceScore}%`;
+        }
+
+        const grid = document.getElementById('ai-restock-items-grid');
+        grid.innerHTML = res.recommendations.slice(0, 3).map((sh, idx) => `
+          <div style="background:#ffffff;border:1px solid var(--border-light);border-radius:var(--radius-md);padding:14px;box-shadow:var(--shadow-xs)">
+            <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+              <span class="badge ${sh.priorityScore >= 80 ? 'badge-danger' : 'badge-warning'}">Xếp hạng #${idx + 1} · ${sh.priorityTierLabel}</span>
+              <strong style="color:var(--primary);font-size:0.9rem">${sh.priorityScore}/100 điểm</strong>
+            </div>
+            <h3 style="font-size:0.95rem;font-weight:700;margin-bottom:4px">Kệ ${sh.shelfCode} · ${sh.zoneName}</h3>
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:8px">Thiếu hụt: <strong>${sh.totalGap} món</strong> · Đang có ${sh.outOfStockCount} món hết sạch</div>
+            <ul style="font-size:0.75rem;color:var(--text-muted);padding-left:14px;margin:0 0 10px">
+              ${sh.reasons.slice(0, 2).map(r => `<li>${r}</li>`).join('')}
+            </ul>
+            <button class="btn btn-outline-primary btn-sm" style="width:100%" onclick="quickCreateRestockForShelf('${sh.shelfCode}', ${sh.suggestedQty}, ${sh.priorityScore})">
+              ⚡ ${sh.hasActiveTask ? 'Nâng ưu tiên việc đang có' : 'Tạo việc bổ sung ' + sh.suggestedQty + ' món'}
+            </button>
+          </div>
+        `).join('');
+
+      } catch (err) {
+        box.innerHTML = `
+          <div class="state-empty" style="padding:20px">
+            <div class="state-empty-icon" style="color:var(--danger)">⚠️</div>
+            <div class="state-empty-title">Lỗi kết nối thuật toán AI Restock</div>
+            <div class="state-empty-desc">${err.message}</div>
+            <button class="btn btn-primary btn-sm" onclick="runAiRestockAnalysis('normal')">Thử lại</button>
+          </div>
+        `;
+      }
+    }
+
+    function acceptAiPriority() {
+      if (!aiPriorityResult || !aiPriorityResult.recommendations) {
+        SS_App.toast('Chưa có kết quả AI để áp dụng. Hãy chạy phân tích lại.', 'warning');
+        return;
+      }
+
+      const applyRecommendations = () => {
+        let created = 0;
+        let promoted = 0;
+        aiPriorityResult.recommendations.slice(0, 3).forEach(recommendation => {
+          const action = createOrPromoteRestockTask(
+            recommendation.shelfCode,
+            recommendation.suggestedQty,
+            recommendation.priorityScore
+          );
+          if (action === 'created') created++;
+          if (action === 'promoted') promoted++;
+        });
+
+        document.getElementById('ai-restock-box').style.display = 'none';
+        applyTaskFilters();
+        SS_App.toast(`Đã áp dụng AI: tạo ${created} việc mới, nâng ưu tiên ${promoted} việc đang có.`, 'success');
+      };
+
+      if (aiPriorityResult.status === 'low_confidence') {
+        SS_App.confirm({
+          title: 'Xác nhận đề xuất AI có độ tin cậy thấp',
+          message: 'Hãy kiểm tra số liệu tại kệ trước khi áp dụng. Bạn vẫn muốn đưa 3 đề xuất đầu vào danh sách công việc?',
+          confirmText: 'Áp dụng sau khi kiểm tra',
+          onConfirm: applyRecommendations
+        });
+        return;
+      }
+
+      applyRecommendations();
+    }
+
+    function rejectAiPriority() {
+      SS_App.toast('Đã bỏ qua đề xuất AI trong ca làm việc này.', 'info');
+      document.getElementById('ai-restock-box').style.display = 'none';
+    }
+
+    function editAiPriority() {
+      SS_App.showModal({
+        title: 'Chỉnh sửa trọng số xếp hạng Restock AI',
+        body: `
+          <div class="form-group">
+            <label class="form-label">Ưu tiên kệ hết sạch (Out of stock weight):</label>
+            <select class="form-control" id="ai-priority-oos-weight">
+              <option value="3" ${aiRestockOptions.outOfStockWeight === 3 ? 'selected' : ''}>Rất cao (x3.0)</option>
+              <option value="1.5" ${aiRestockOptions.outOfStockWeight === 1.5 ? 'selected' : ''}>Tiêu chuẩn (x1.5)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Xét theo tốc độ bán giờ cao điểm:</label>
+            <select class="form-control" id="ai-priority-peak-hours">
+              <option value="true" ${aiRestockOptions.prioritizePeakHours ? 'selected' : ''}>Bật (Tính toán giờ tan tầm 17h-19h)</option>
+              <option value="false" ${!aiRestockOptions.prioritizePeakHours ? 'selected' : ''}>Tắt</option>
+            </select>
+          </div>
+        `,
+        footer: `
+          <button class="btn btn-secondary" onclick="SS_App.closeModal()">Hủy</button>
+          <button class="btn btn-primary" onclick="saveAiPrioritySettings()">Lưu & Chạy lại</button>
+        `
+      });
+    }
+
+    function saveAiPrioritySettings() {
+      aiRestockOptions = {
+        outOfStockWeight: Number(document.getElementById('ai-priority-oos-weight').value),
+        prioritizePeakHours: document.getElementById('ai-priority-peak-hours').value === 'true'
+      };
+      SS_App.closeModal();
+      runAiRestockAnalysis();
+    }
+
+    function startTask(id) {
+      SS_Store.update('restockTasks', id, { status: 'in_progress', statusLabel: 'Đang xử lý' });
+      SS_App.toast('Đã bắt đầu xử lý nhiệm vụ. Hãy đến kho phụ lấy hàng!', 'info');
+      applyTaskFilters();
+    }
+
+    function completeTask(id) {
+      const task = SS_Store.getById('restockTasks', id);
+      if (!task) return;
+
+      if (!SS_Store.completeRestockTask(id)) {
+        SS_App.toast(`Không thể hoàn thành ${task.code}: không tìm thấy sản phẩm ${task.sku}.`, 'error');
+        return;
+      }
+
+      SS_App.toast(`Đã hoàn tất nhiệm vụ ${task.code}! Tồn kho trên kệ đã được cập nhật tăng.`, 'success');
+      applyTaskFilters();
+    }
+
+    function reportTaskProblem(id) {
+      SS_App.showModal({
+        title: 'Báo cáo sự cố nhiệm vụ bổ sung',
+        body: `
+          <div class="form-group">
+            <label class="form-label">Lý do không thể hoàn thành: <span class="required">*</span></label>
+            <select class="form-control" id="problem-reason">
+              <option value="out_of_stock_warehouse">Kho tổng đã hết hàng tồn</option>
+              <option value="damaged">Hàng trong thùng bị móp méo / bể vỡ</option>
+              <option value="wrong_info">Sai lệch thông tin vị trí kệ</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Ghi chú cụ thể:</label>
+            <textarea class="form-control" id="problem-note" rows="2" placeholder="Ví dụ: Đã kiểm tra pallet kho số 4, không còn thùng mì nào."></textarea>
+          </div>
+        `,
+        footer: `
+          <button class="btn btn-secondary" onclick="SS_App.closeModal()">Đóng</button>
+          <button class="btn btn-danger" onclick="confirmRejectTask('${id}')">Xác nhận Từ chối việc</button>
+        `
+      });
+    }
+
+    function confirmRejectTask(id) {
+      const reason = document.getElementById('problem-reason').value;
+      const note = document.getElementById('problem-note').value;
+      SS_Store.update('restockTasks', id, {
+        status: 'rejected',
+        statusLabel: 'Bị từ chối',
+        rejectReason: note || reason
+      });
+      SS_App.closeModal();
+      SS_App.toast('Đã ghi nhận báo cáo và chuyển trạng thái Từ chối.', 'warning');
+      applyTaskFilters();
+    }
+
+    function viewTaskDetail(id) {
+      const task = SS_Store.getById('restockTasks', id);
+      if (!task) return;
+
+      SS_App.showModal({
+        title: `Chi tiết nhiệm vụ: ${task.code}`,
+        body: `
+          <div style="display:flex;gap:14px;margin-bottom:14px">
+            <img src="${task.productImage || ''}" style="width:60px;height:60px;border-radius:6px;object-fit:cover">
+            <div>
+              <div style="font-weight:700;font-size:1rem">${task.productName}</div>
+              <div style="font-size:0.8rem;color:var(--text-muted)">Mã SKU: ${task.sku}</div>
+              <div style="font-size:0.82rem;color:var(--primary);font-weight:700;margin-top:2px">Đích đến: Kệ ${task.shelfCode} (${task.zoneName})</div>
+            </div>
+          </div>
+          <div style="background:var(--bg-subtle);padding:10px 12px;border-radius:var(--radius-md);margin-bottom:12px;font-size:0.82rem">
+            <strong>Lý do AI & Ghi chú:</strong>
+            <p style="margin:4px 0 0;color:var(--text-secondary)">${task.aiReason || 'Không có ghi chú.'}</p>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:0.82rem">
+            <div>Cần bổ sung: <strong>${task.neededQty}</strong></div>
+            <div>Tồn hiện tại: <strong>${task.currentQty}</strong></div>
+            <div>Người phụ trách: <strong>${task.assigneeName}</strong></div>
+            <div>Hạn hoàn thành: <strong>${SS_App.formatDate(task.dueDate)}</strong></div>
+          </div>
+        `,
+        footer: `
+          <button class="btn btn-secondary" onclick="SS_App.closeModal()">Đóng</button>
+        `
+      });
+    }
+
+    function createOrPromoteRestockTask(shelfCode, qty, priorityScore = 92) {
+      const products = SS_Store.all('products')
+        .filter(product => product.shelfCode === shelfCode && product.status !== 'archived')
+        .sort((a, b) => a.stock - b.stock);
+      const prod = products[0];
+      if (!prod) return null;
+
+      const activeTask = SS_Store.all('restockTasks').find(task =>
+        task.shelfCode === shelfCode && ['pending', 'high_priority', 'in_progress', 'on_hold'].includes(task.status)
+      );
+      const priority = priorityScore >= 80 ? 'critical' : priorityScore >= 60 ? 'high' : 'medium';
+      const priorityLabel = priority === 'critical' ? 'Khẩn cấp (5/5)' : priority === 'high' ? 'Ưu tiên cao (4/5)' : 'Trung bình (3/5)';
+      const aiReason = `Đề xuất AI xếp kệ ${shelfCode} đạt ${priorityScore}/100 điểm; cần ưu tiên theo dõi lượng thiếu và tốc độ bán.`;
+
+      if (activeTask) {
+        SS_Store.update('restockTasks', activeTask.id, {
+          neededQty: Math.max(1, Number(qty) || 15),
+          priority,
+          priorityLabel,
+          priorityScore,
+          aiReason,
+          status: activeTask.status === 'in_progress' ? 'in_progress' : 'high_priority',
+          statusLabel: activeTask.status === 'in_progress' ? 'Đang xử lý' : 'Ưu tiên cao'
+        });
+        return 'promoted';
+      }
+
+      const newTask = {
+        code: `RSK-${Date.now()}-${Math.floor(Math.random() * 100)}`,
+        sku: prod.sku,
+        productName: prod.name,
+        productImage: prod.image,
+        zoneId: prod.zoneId,
+        zoneName: prod.zoneName,
+        shelfCode: shelfCode,
+        neededQty: Math.max(1, Number(qty) || 15),
+        currentQty: prod.stock,
+        priority,
+        priorityLabel,
+        priorityScore,
+        assigneeId: '',
+        assigneeName: '',
+        source: 'AI-1 Restock Priority',
+        aiReason,
+        status: 'high_priority',
+        statusLabel: 'Ưu tiên cao',
+        dueDate: new Date(Date.now() + 3600000 * 2).toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      const assignee = SS_Store.all('users').find(user => user.role === 'associate' && user.zoneId === prod.zoneId)
+        || SS_Store.all('users').find(user => user.role === 'associate');
+      if (assignee) {
+        newTask.assigneeId = assignee.id;
+        newTask.assigneeName = assignee.name;
+        newTask.assigneeAvatar = assignee.avatar;
+      }
+
+      SS_Store.insert('restockTasks', newTask);
+      return 'created';
+    }
+
+    function quickCreateRestockForShelf(shelfCode, qty, priorityScore) {
+      const action = createOrPromoteRestockTask(shelfCode, qty, priorityScore);
+      if (!action) {
+        SS_App.toast(`Không thể tạo nhiệm vụ: Kệ ${shelfCode} chưa có sản phẩm hoạt động.`, 'warning');
+        return;
+      }
+      SS_App.toast(action === 'created'
+        ? `Đã tạo nhiệm vụ bổ sung cho Kệ ${shelfCode}.`
+        : `Đã nâng ưu tiên nhiệm vụ đang có tại Kệ ${shelfCode}.`, 'success');
+      applyTaskFilters();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Khu vực cửa hàng · SmartShelf Nhân viên</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .zone-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+    .zone-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-xs);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .zone-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-2px);
+    }
+    .zone-color-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+    }
+    .zone-stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 16px 0;
+      padding: 12px;
+      background-color: var(--bg-subtle);
+      border-radius: var(--radius-md);
+      text-align: center;
+    }
+    .zone-stat-val {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+    .zone-stat-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 600;
+    }
+    .zone-progress-box {
+      margin-bottom: 16px;
+    }
+    .progress-bar-bg {
+      width: 100%;
+      height: 8px;
+      background-color: var(--border-light);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: var(--radius-full);
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace">
+      <!-- Page Header -->
+      <div class="ss-page-head">
+        <div class="ss-page-title-box">
+          <h1>Nhân viên cửa hàng · Giám sát khu vực (Zone View)</h1>
+          <p class="ss-page-subtitle">Theo dõi tình trạng lấp đầy kệ hàng, số kệ trống, các mặt hàng thiếu hụt và tiến độ bổ sung hàng trên 5 khu vực siêu thị.</p>
+        </div>
+        <div class="ss-page-actions">
+          <button class="btn btn-secondary" onclick="openQuickRestockModal()">
+            <span>⚡</span>
+            <span>Tạo việc bổ sung nhanh</span>
+          </button>
+          <a href="associate-shelf-check.html" class="btn btn-primary">
+            <span>📋</span>
+            <span>Bắt đầu kiểm kê kệ</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Quick Metrics -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Tổng khu vực phụ trách</span>
+            <div class="kpi-icon-box" style="background-color: var(--primary-light); color: var(--primary);">🏬</div>
+          </div>
+          <div class="kpi-value">5 Khu</div>
+          <div class="kpi-card-bottom">
+            <span>26 Kệ hàng đang giám sát</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Kệ trống cần bổ sung gấp</span>
+            <div class="kpi-icon-box" style="background-color: var(--danger-bg); color: var(--danger);">🚨</div>
+          </div>
+          <div class="kpi-value" style="color: var(--danger)" id="stat-empty-shelves">2 Kệ</div>
+          <div class="kpi-card-bottom">
+            <span class="kpi-trend negative">Kệ A-03 &amp; D-01</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Kệ sắp hết hàng</span>
+            <div class="kpi-icon-box" style="background-color: var(--warning-bg); color: var(--warning);">⚠️</div>
+          </div>
+          <div class="kpi-value" style="color: var(--warning)" id="stat-low-shelves">4 Kệ</div>
+          <div class="kpi-card-bottom">
+            <span>Dưới 25% định mức</span>
+          </div>
+        </div>
+
+        <div class="kpi-card">
+          <div class="kpi-card-top">
+            <span class="kpi-label">Nhiệm vụ đang chờ nhân viên</span>
+            <div class="kpi-icon-box" style="background-color: #f0f9ff; color: #0284c7;">📌</div>
+          </div>
+          <div class="kpi-value" style="color: #0284c7" id="stat-pending-tasks">5 Việc</div>
+          <div class="kpi-card-bottom">
+            <a href="associate-restock-task.html" style="font-weight:700">Xử lý ngay →</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zone Cards Grid -->
+      <div class="zone-cards-grid" id="zone-cards-grid">
+        <!-- Rendered by JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      renderZoneCards();
+    });
+
+    function renderZoneCards() {
+      const zones = SS_Store.all('zones');
+      const shelves = SS_Store.all('shelves');
+      const products = SS_Store.all('products');
+      const tasks = SS_Store.all('restockTasks');
+      const container = document.getElementById('zone-cards-grid');
+
+      container.innerHTML = zones.map(zone => {
+        const zoneShelves = shelves.filter(s => s.zoneId === zone.id);
+        const zoneProducts = products.filter(p => p.zoneId === zone.id);
+        const zoneTasks = tasks.filter(t => t.zoneId === zone.id && ['pending', 'high_priority', 'in_progress'].includes(t.status));
+
+        const emptyShelves = zoneShelves.filter(s => s.status === 'empty' || s.currentItems === 0).length;
+        const lowShelves = zoneShelves.filter(s => s.status === 'low' || s.status === 'critical').length;
+        const outOfStockProducts = zoneProducts.filter(p => p.stock === 0).length;
+
+        const availability = zone.currentAvailability || 90;
+        let barColor = 'var(--primary)';
+        if (availability < 80) barColor = 'var(--danger)';
+        else if (availability < 90) barColor = 'var(--warning)';
+
+        return `
+          <div class="zone-card">
+            <div class="zone-color-bar" style="background-color: ${zone.color}"></div>
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:8px">
+              <div>
+                <span class="badge" style="background:${zone.color}15;color:${zone.color};border:1px solid ${zone.color}40;margin-bottom:4px">
+                  ${zone.aisle}
+                </span>
+                <h2 style="font-size:1.15rem;font-weight:700;color:var(--text-main);margin-bottom:2px">${zone.name}</h2>
+                <div style="font-size:0.8rem;color:var(--text-muted)">Quản lý: <strong>${zone.managerName}</strong> · Lưu lượng: ${zone.trafficScore}</div>
+              </div>
+            </div>
+
+            <p style="font-size:0.84rem;color:var(--text-secondary);margin-bottom:12px;line-height:1.4">${zone.description}</p>
+
+            <!-- Progress on-shelf availability -->
+            <div class="zone-progress-box">
+              <div style="display:flex;justify-content:space-between;font-size:0.8rem;font-weight:600;margin-bottom:4px">
+                <span>Độ phủ hàng trên kệ</span>
+                <span style="color:${barColor}">${availability}% / Mục tiêu ${zone.targetAvailability}%</span>
+              </div>
+              <div class="progress-bar-bg">
+                <div class="progress-bar-fill" style="width: ${availability}%; background-color: ${barColor};"></div>
+              </div>
+            </div>
+
+            <!-- Stats 3 cột -->
+            <div class="zone-stat-row">
+              <div>
+                <div class="zone-stat-val">${zoneShelves.length}</div>
+                <div class="zone-stat-label">Tổng kệ</div>
+              </div>
+              <div>
+                <div class="zone-stat-val" style="color:${emptyShelves > 0 ? 'var(--danger)' : 'var(--text-main)'}">${emptyShelves}</div>
+                <div class="zone-stat-label">Kệ trống</div>
+              </div>
+              <div>
+                <div class="zone-stat-val" style="color:${lowShelves > 0 ? 'var(--warning)' : 'var(--text-main)'}">${lowShelves}</div>
+                <div class="zone-stat-label">Kệ sắp hết</div>
+              </div>
+            </div>
+
+            <!-- Alerts if any -->
+            <div style="margin-bottom:16px">
+              ${emptyShelves > 0 ? `
+                <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--danger);font-weight:600;margin-bottom:4px">
+                  <span>🚨</span> Có ${emptyShelves} kệ hết sạch hàng cần xử lý gấp.
+                </div>
+              ` : ''}
+              ${zoneTasks.length > 0 ? `
+                <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--warning);font-weight:600">
+                  <span>⚡</span> Đang có ${zoneTasks.length} nhiệm vụ bổ sung chưa hoàn thành.
+                </div>
+              ` : `
+                <div style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--success)">
+                  <span>✓</span> Khu vực vận hành ổn định, không có tồn đọng.
+                </div>
+              `}
+            </div>
+
+            <!-- Card Actions -->
+            <div style="display:flex;gap:8px;margin-top:auto">
+              <a href="associate-shelf-check.html?zone=${zone.id}" class="btn btn-primary btn-sm" style="flex:1">
+                <span>📋</span>
+                <span>Kiểm kê khu vực</span>
+              </a>
+              <a href="associate-restock-task.html?zone=${zone.id}" class="btn btn-secondary btn-sm" title="Xem danh sách việc">
+                <span>⚡ Việc (${zoneTasks.length})</span>
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openQuickRestockModal() {
+      const products = SS_Store.all('products');
+      const shelves = SS_Store.all('shelves');
+
+      SS_App.showModal({
+        title: 'Tạo nhiệm vụ bổ sung hàng khẩn cấp',
+        body: `
+          <form id="quick-restock-form">
+            <div class="form-group">
+              <label class="form-label">Chọn sản phẩm cần bổ sung: <span class="required">*</span></label>
+              <select class="form-control" id="task-prod-select" onchange="updateShelfFromProduct(this.value)">
+                ${products.map(p => `<option value="${p.sku}" data-shelf="${p.shelfCode}" data-zone="${p.zoneId}">${p.name} (${p.sku}) · Tồn: ${p.stock}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Số lượng cần lấy từ kho: <span class="required">*</span></label>
+                <input type="number" class="form-control" id="task-qty" value="15" min="1" max="100">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Mức độ ưu tiên:</label>
+                <select class="form-control" id="task-priority">
+                  <option value="critical">Khẩn cấp (5/5)</option>
+                  <option value="high" selected>Ưu tiên cao (4/5)</option>
+                  <option value="medium">Trung bình (3/5)</option>
+                  <option value="low">Thấp (2/5)</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Ghi chú cho nhân viên ca:</label>
+              <textarea class="form-control" id="task-note" rows="2" placeholder="Ví dụ: Kệ trống trơn, khách hỏi nhiều lần. Lấy từ kho chính cửa 3."></textarea>
+            </div>
+          </form>
+        `,
+        footer: `
+          <button class="btn btn-secondary" onclick="SS_App.closeModal()">Hủy</button>
+          <button class="btn btn-primary" onclick="submitQuickRestock()">Phát lệnh bổ sung</button>
+        `
+      });
+    }
+
+    function submitQuickRestock() {
+      const select = document.getElementById('task-prod-select');
+      const sku = select.value;
+      const opt = select.selectedOptions[0];
+      const shelfCode = opt.getAttribute('data-shelf');
+      const zoneId = opt.getAttribute('data-zone');
+      const qty = Number(document.getElementById('task-qty').value) || 15;
+      const priority = document.getElementById('task-priority').value;
+      const note = document.getElementById('task-note').value;
+      const prod = SS_Store.find('products', p => p.sku === sku);
+
+      const newTask = {
+        code: 'RSK-' + Math.floor(Math.random() * 800 + 200),
+        sku: sku,
+        productName: prod ? prod.name : 'Sản phẩm',
+        productImage: prod ? prod.image : '',
+        zoneId: zoneId,
+        zoneName: prod ? prod.zoneName : 'Khu vực',
+        shelfCode: shelfCode,
+        neededQty: qty,
+        currentQty: prod ? prod.stock : 0,
+        priority: priority,
+        priorityLabel: priority === 'critical' ? 'Khẩn cấp' : priority === 'high' ? 'Ưu tiên cao' : 'Trung bình',
+        priorityScore: priority === 'critical' ? 95 : 80,
+        assigneeId: 'U-03',
+        assigneeName: 'Lê Văn Tùng',
+        source: 'Nhân viên tạo nhanh',
+        aiReason: note || 'Bổ sung khẩn cấp do nhân viên giám sát khu vực yêu cầu.',
+        status: 'pending',
+        statusLabel: 'Đang chờ',
+        dueDate: new Date(Date.now() + 3600000 * 2).toISOString(),
+        createdAt: new Date().toISOString()
+      };
+
+      SS_Store.insert('restockTasks', newTask);
+      SS_App.closeModal();
+      SS_App.toast(`Đã phát lệnh bổ sung ${newTask.code} thành công!`, 'success');
+      renderZoneCards();
+    }
+  </script>
+</body>
+</html>
+

@@ -1,0 +1,276 @@
+/* =============================================================================
+   SmartShelf RetailTech OS - Responsive Breakpoints & Mobile Adaptations
+   Hỗ trợ: Desktop (>1024px), Tablet (768px - 1024px), Mobile (<768px)
+   ============================================================================= */
+
+.settings-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+  gap: 24px;
+  margin-bottom: 30px;
+}
+
+/* TABLET (<= 1024px) */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-w: 78px; /* Tự động thu gọn trên tablet */
+  }
+
+  .ss-sidebar .sidebar-text,
+  .ss-sidebar .sidebar-header-badge,
+  .ss-sidebar .role-tag,
+  .ss-sidebar .nav-group-title,
+  .ss-sidebar .ss-logo-text {
+    display: none;
+  }
+
+  .ss-app-container {
+    margin-left: var(--sidebar-w);
+  }
+
+  .map-layout-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .ss-main-workspace {
+    padding: 20px;
+  }
+
+  .store-live-status {
+    display: none; /* Ẩn bớt text dài trên tablet */
+  }
+
+  .settings-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* MOBILE (< 768px) */
+@media (max-width: 768px) {
+  :root {
+    --header-h: 62px;
+  }
+
+  /* Sidebar chuyển thành off-canvas drawer */
+  .ss-sidebar {
+    width: 280px !important;
+    transform: translateX(-100%);
+    box-shadow: var(--shadow-xl);
+  }
+
+  .ss-sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .ss-sidebar .sidebar-text,
+  .ss-sidebar .sidebar-header-badge,
+  .ss-sidebar .role-tag,
+  .ss-sidebar .nav-group-title,
+  .ss-sidebar .ss-logo-text {
+    display: flex !important;
+  }
+
+  .ss-sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(2px);
+    z-index: 45;
+    display: none;
+  }
+
+  .ss-sidebar-backdrop.show {
+    display: block;
+  }
+
+  /* Main container chiếm trọn 100% */
+  .ss-app-container {
+    margin-left: 0 !important;
+    width: 100%;
+  }
+
+  .mobile-menu-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .ss-header {
+    padding: 0 14px;
+  }
+
+  .ss-header-search {
+    display: none; /* Đưa search vào trang hoặc nút modal trên mobile */
+  }
+
+  .ss-main-workspace {
+    padding: 16px 14px 80px;
+  }
+
+  .ss-page-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ss-page-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .kpi-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Bản đồ siêu thị dạng 1 cột hoặc scroll ngang */
+  .map-layout-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  /* Kanban board vuốt ngang */
+  .kanban-board-container {
+    padding-bottom: 20px;
+    margin-left: -14px;
+    margin-right: -14px;
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .kanban-column {
+    flex: 0 0 280px;
+  }
+
+  /* Modal responsive */
+  .modal-dialog {
+    margin: 10px;
+    max-height: 94vh;
+  }
+
+  .modal-header {
+    padding: 14px 18px;
+  }
+
+  .modal-body {
+    padding: 16px 18px;
+  }
+
+  .modal-footer {
+    padding: 12px 18px;
+  }
+
+  /* Toast full width trên mobile */
+  .toast-container {
+    left: 14px;
+    right: 14px;
+    bottom: 16px;
+  }
+
+  .toast {
+    min-width: 100%;
+    max-width: 100%;
+  }
+
+  /* Card Grid sản phẩm chuyển thành 1-2 cột */
+  .product-catalog-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .zone-cards-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  /* Bảng dữ liệu có thể cuộn ngang nhẹ nhàng */
+  .table-responsive {
+    border-radius: var(--radius-md);
+  }
+
+  .data-table th, .data-table td {
+    padding: 10px 12px;
+  }
+
+  .hide-on-mobile {
+    display: none !important;
+  }
+
+  .ai-simulation-controller {
+    flex-wrap: wrap;
+  }
+
+  .ai-simulation-controller select {
+    max-width: 100%;
+  }
+}
+
+/* SMALL MOBILE (< 480px) */
+@media (max-width: 480px) {
+  .ss-header-left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ss-header-right {
+    flex-shrink: 0;
+    gap: 8px;
+  }
+
+  .theme-toggle-btn {
+    min-width: 38px;
+    padding: 6px;
+  }
+
+  .theme-toggle-btn #theme-toggle-label {
+    display: none;
+  }
+
+  .ss-breadcrumb {
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .ss-breadcrumb > span:not(.current) {
+    display: none;
+  }
+
+  .ss-breadcrumb .current {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .role-switcher-btn {
+    padding: 6px 9px;
+  }
+
+  .role-switcher-btn #role-btn-label,
+  .role-switcher-btn > span:last-child {
+    display: none;
+  }
+
+  .btn-label-responsive {
+    display: none;
+  }
+
+  .ss-page-title-box h1 {
+    font-size: 1.35rem;
+  }
+
+  .role-menu-popup {
+    width: 220px;
+  }
+
+  .notif-flyout {
+    width: calc(100vw - 28px);
+    right: -60px;
+  }
+}
