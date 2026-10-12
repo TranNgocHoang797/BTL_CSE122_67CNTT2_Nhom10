@@ -129,7 +129,7 @@
 ## 5. Cấu trúc thư mục mã nguồn
 
 ```
-d:\bai\BTL\
+BTL
 ├── index.html                           # Cổng tổng quan hệ thống & Switcher
 ├── shopper-product-search.html          # Khách: Tìm kiếm sản phẩm
 ├── shopper-product-location.html        # Khách: Vị trí & Bản đồ siêu thị 2D
