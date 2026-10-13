@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Vị trí sản phẩm & Bản đồ kệ · SmartShelf</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .location-hero-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      gap: 24px;
+      flex-wrap: wrap;
+    }
+    .location-prod-img {
+      width: 140px;
+      height: 140px;
+      border-radius: var(--radius-lg);
+      object-fit: cover;
+      border: 1px solid var(--border-light);
+      flex-shrink: 0;
+    }
+    .location-details-col {
+      flex: 1;
+      min-width: 260px;
+    }
+    .location-pill-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .loc-pill {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      padding: 10px 12px;
+    }
+    .loc-pill-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 3px;
+    }
+    .loc-pill-val {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+
+    /* Supermarket 2D Store Map Visualizer */
+    .store-map-canvas-box {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 24px;
+      position: relative;
+      color: var(--text-main);
+    }
+    .map-header-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .map-legend {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* SVG Map Framework */
+    .supermarket-svg-wrapper {
+      width: 100%;
+      background: var(--bg-page);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: 12px;
+      overflow-x: auto;
+    }
+    .map-store-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding: 8px 12px;
+      background-color: var(--bg-subtle);
+      border-radius: var(--radius-sm);
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+    .map-navigation-guide {
+      margin-top: 14px;
+      padding: 10px 14px;
+      background-color: var(--primary-light);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--primary-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      font-size: 0.82rem;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace">
+      <!-- Breadcrumb Nav -->
+      <div style="margin-bottom: 16px;">
+        <a href="shopper-product-search.html" class="btn btn-secondary btn-sm">
+          <span>← Quay lại tìm kiếm</span>
+        </a>
+      </div>
+
+      <!-- Product & Shelf Coordinates Card -->
+      <div class="location-hero-card" id="location-hero-card">
+        <img src="https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?auto=format&fit=crop&w=600&q=80" alt="Product" class="location-prod-img" id="prod-img">
+        <div class="location-details-col">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <span class="badge badge-info" id="prod-sku">SKU-1004</span>
+            <span id="prod-stock-badge"><span class="badge badge-danger">Hết hàng trên kệ</span></span>
+          </div>
+          <h1 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px;" id="prod-name">Dầu Ăn Đậu Nành Simply Chai 1L</h1>
+          <div style="font-size: 1.15rem; font-weight: 800; color: var(--primary); margin-bottom: 12px;" id="prod-price">64.000 đ</div>
+
+          <!-- Location Coordinates -->
+          <div class="location-pill-grid">
+            <div class="loc-pill">
+              <div class="loc-pill-label">Khu vực siêu thị</div>
+              <div class="loc-pill-val" id="loc-zone">Khu A</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)" id="loc-aisle">Lối 1 – 4</div>
+            </div>
+            <div class="loc-pill" style="border-color: var(--primary-border); background-color: var(--primary-light);">
+              <div class="loc-pill-label">Số kệ hàng</div>
+              <div class="loc-pill-val" id="loc-shelf" style="color:var(--primary)">Kệ A-02</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Dãy bên phải</div>
+            </div>
+            <div class="loc-pill">
+              <div class="loc-pill-label">Tầng trưng bày</div>
+              <div class="loc-pill-val" id="loc-level" style="font-size:0.95rem">Tầng 2</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Tầm mắt người lớn</div>
+            </div>
+            <div class="loc-pill">
+              <div class="loc-pill-label">Vị trí khay đựng</div>
+              <div class="loc-pill-val" id="loc-pos" style="font-size:0.95rem">Khay 01-02</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">Bên trái kệ</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; justify-content: center; min-width: 180px;">
+          <button class="btn btn-primary" onclick="SS_App.toast('Đã lưu vị trí kệ vào danh sách chỉ đường của bạn!', 'success')">
+            <span>💾</span>
+            <span>Lưu chỉ đường</span>
+          </button>
+          <button class="btn btn-secondary" onclick="navigator.clipboard.writeText(window.location.href); SS_App.toast('Đã sao chép liên kết vị trí sản phẩm!', 'info')">
+            <span>🔗</span>
+            <span>Chia sẻ vị trí</span>
+          </button>
+          <div id="alt-suggestion-btn-slot"></div>
+        </div>
+      </div>
+
+      <!-- Sơ đồ bản đồ siêu thị 2D -->
+      <div class="store-map-canvas-box">
+        <div class="map-header-bar">
+          <div>
+            <h2 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Bản đồ điều hướng 2D SmartShelf Mart (Tầng 1)</h2>
+            <p style="font-size: 0.84rem; color: var(--text-muted);">Đang đánh dấu vị trí chính xác của món hàng. Nhấp vào các kệ khác để khám phá.</p>
+          </div>
+
+          <div class="map-legend">
+            <div class="legend-item">
+              <span style="width:12px;height:12px;border-radius:3px;background-color:var(--primary);display:inline-block"></span>
+              <span>Kệ sản phẩm mục tiêu (📍)</span>
+            </div>
+            <div class="legend-item">
+              <span style="width:12px;height:12px;border-radius:3px;background-color:#ffffff;border:1px solid #cbd5e1;display:inline-block"></span>
+              <span>Kệ thông thường</span>
+            </div>
+            <div class="legend-item">
+              <span style="width:14px;height:2px;background-color:#059669;display:inline-block;border:1px dashed #059669"></span>
+              <span>Lộ trình di chuyển từ Cửa vào</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Interactive Map Grid -->
+        <div class="supermarket-svg-wrapper">
+          <div class="map-store-meta">
+            <span>🚪 CỬA VÀO SIÊU THỊ &amp; LỐI GỬI ĐỒ</span>
+            <span>🛒 QUẦY XE ĐẨY</span>
+            <span>💳 QUẦY THU NGÂN 01 - 08</span>
+          </div>
+
+          <div class="map-layout-grid" id="supermarket-map-grid">
+            <!-- Rendered by JS -->
+          </div>
+
+          <div class="map-navigation-guide">
+            <div style="display: flex; align-items: center; gap: 8px; color: var(--primary);">
+              <span style="font-size:1.1rem">🧭</span>
+              <strong id="navigation-guide-text">Hướng dẫn di chuyển: Từ Cửa vào chính, rẽ phải vào Lối số 2 (Khu A), tiến 15 bước, kệ A-02 nằm ngay bên tay phải.</strong>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="SS_App.toast('Tuyệt vời! Chúc bạn có trải nghiệm mua sắm tiện lợi tại SmartShelf Mart.', 'success')">
+              ✓ Tôi đã đến nơi
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let currentSku = 'SKU-1004';
+    let currentProduct = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      currentSku = urlParams.get('sku') || 'SKU-1004';
+      
+      currentProduct = SS_Store.getProductDetail(currentSku) || SS_Store.getProductDetail('SKU-1001');
+      renderProductInfo(currentProduct);
+      renderStoreMap(currentProduct.shelfCode);
+    });
+
+    function renderProductInfo(p) {
+      document.getElementById('prod-img').src = p.image;
+      document.getElementById('prod-sku').textContent = p.sku;
+      document.getElementById('prod-name').textContent = p.name;
+      document.getElementById('prod-price').textContent = SS_App.formatMoney(p.price);
+
+      const isOut = p.stock === 0 || p.status === 'out_of_stock';
+      const badgeContainer = document.getElementById('prod-stock-badge');
+      if (isOut) {
+        badgeContainer.innerHTML = '<span class="badge badge-danger">Hết hàng trên kệ</span>';
+        document.getElementById('alt-suggestion-btn-slot').innerHTML = `
+          <a href="shopper-product-alternatives.html?sku=${p.sku}" class="btn btn-outline-primary" style="background-color:#f0fdfa;border-color:var(--primary-border);font-weight:700">
+            <span>✨</span>
+            <span>Gợi ý thay thế AI</span>
+          </a>
+        `;
+      } else {
+        badgeContainer.innerHTML = `<span class="badge badge-success">Còn ${p.stock} ${p.unit}</span>`;
+        document.getElementById('alt-suggestion-btn-slot').innerHTML = '';
+      }
+
+      document.getElementById('loc-zone').textContent = p.zoneName || 'Khu A';
+      document.getElementById('loc-aisle').textContent = p.zoneDetail ? p.zoneDetail.aisle : 'Lối 1 – 4';
+      document.getElementById('loc-shelf').textContent = `Kệ ${p.shelfCode}`;
+      document.getElementById('loc-level').textContent = p.shelfLevel || 'Tầng 2';
+      document.getElementById('loc-pos').textContent = p.shelfPosition || 'Khay 01-03';
+
+      document.getElementById('navigation-guide-text').textContent = 
+        `Hướng dẫn di chuyển: Từ Cửa vào chính, đi thẳng đến ${p.zoneName}, rẽ vào ${p.zoneDetail ? p.zoneDetail.aisle : 'lối giữa'}, kệ ${p.shelfCode} nằm ở vị trí đánh dấu đỏ.`;
+    }
+
+    function renderStoreMap(targetShelfCode) {
+      const zones = SS_Store.all('zones');
+      const shelves = SS_Store.all('shelves');
+      const container = document.getElementById('supermarket-map-grid');
+
+      container.innerHTML = zones.map(zone => {
+        const zoneShelves = shelves.filter(s => s.zoneId === zone.id);
+        const isTargetZone = zoneShelves.some(s => s.code === targetShelfCode);
+
+        return `
+          <div class="map-zone-block ${isTargetZone ? 'target-zone' : ''}">
+            <div class="map-zone-title" style="color: ${zone.color}">
+              ${zone.name.split('–')[0]}
+              <div style="font-size:0.7rem;font-weight:normal;color:var(--text-muted)">${zone.aisle}</div>
+            </div>
+            <div class="map-shelf-row">
+              ${zoneShelves.map(shelf => {
+                const isTarget = shelf.code === targetShelfCode;
+                return `
+                  <div class="map-shelf-item ${isTarget ? 'target-shelf' : ''}" onclick="selectShelfFromMap('${shelf.code}')">
+                    <span>Kệ ${shelf.code}</span>
+                    ${isTarget ? '<div class="shelf-pin-pulse">📍</div>' : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectShelfFromMap(shelfCode) {
+      const productsOnShelf = SS_Store.all('products').filter(p => p.shelfCode === shelfCode);
+      if (productsOnShelf.length > 0) {
+        SS_App.showModal({
+          title: `Sản phẩm đang trưng bày tại Kệ ${shelfCode}`,
+          body: `
+            <div style="display:flex;flex-direction:column;gap:12px;">
+              ${productsOnShelf.map(p => `
+                <div style="display:flex;align-items:center;gap:12px;padding:8px;border:1px solid var(--border-light);border-radius:var(--radius-md);">
+                  <img src="${p.image}" style="width:50px;height:50px;border-radius:6px;object-fit:cover;">
+                  <div style="flex:1">
+                    <div style="font-weight:700;font-size:0.88rem">${p.name}</div>
+                    <div style="font-size:0.78rem;color:var(--text-muted)">${p.sku} · ${SS_App.formatMoney(p.price)}</div>
+                  </div>
+                  <a href="shopper-product-location.html?sku=${p.sku}" class="btn btn-secondary btn-sm">Xem vị trí</a>
+                </div>
+              `).join('')}
+            </div>
+          `
+        });
+      } else {
+        SS_App.toast(`Kệ ${shelfCode} hiện chưa có thông tin sản phẩm chi tiết.`, 'info');
+      }
+    }
+  </script>
+</body>
+</html>
