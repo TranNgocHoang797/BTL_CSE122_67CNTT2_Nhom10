@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tìm kiếm sản phẩm · SmartShelf</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .search-hero {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+    }
+    .search-hero-input {
+      display: flex;
+      align-items: center;
+      background-color: var(--bg-subtle);
+      border: 2px solid var(--primary-border);
+      border-radius: var(--radius-full);
+      padding: 12px 20px;
+      gap: 12px;
+      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.08);
+      transition: all 0.2s;
+    }
+    .search-hero-input:focus-within {
+      border-color: var(--primary);
+      background-color: var(--bg-subtle);
+      box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.18);
+    }
+    .search-hero-input input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-size: 1.05rem;
+      width: 100%;
+      color: var(--text-main);
+    }
+    .search-hero-input input::placeholder {
+      color: var(--text-muted);
+      opacity: 1;
+    }
+    .search-suggestions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .suggestion-chip {
+      background-color: var(--bg-subtle);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-full);
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .suggestion-chip:hover {
+      background-color: var(--primary-light);
+      color: var(--primary);
+      border-color: var(--primary-border);
+    }
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 20px;
+      scrollbar-width: none;
+    }
+    .category-tabs::-webkit-scrollbar { display: none; }
+    .category-tab {
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      cursor: pointer;
+      border: 1px solid var(--border-light);
+      background-color: var(--bg-card);
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .category-tab:hover {
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .category-tab.active {
+      background-color: var(--primary);
+      color: white;
+      border-color: var(--primary);
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+    }
+
+    /* Product Grid */
+    .product-catalog-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    .product-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .product-card:hover {
+      box-shadow: var(--shadow-md);
+      transform: translateY(-3px);
+      border-color: #cbd5e1;
+    }
+    .product-card-img-box {
+      width: 100%;
+      height: 190px;
+      background-color: var(--bg-subtle);
+      position: relative;
+      overflow: hidden;
+    }
+    .product-card-img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+    .product-card:hover .product-card-img {
+      transform: scale(1.04);
+    }
+    .product-stock-tag {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+    }
+    .product-shelf-tag {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      background: rgba(15, 23, 42, 0.85);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: var(--radius-sm);
+      backdrop-filter: blur(4px);
+    }
+    .product-card-body {
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+    }
+    .product-brand {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 4px;
+    }
+    .product-name {
+      font-size: 0.98rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.35;
+      margin-bottom: 8px;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      min-height: 2.7em;
+    }
+    .product-price-box {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+    .product-price {
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: var(--primary);
+    }
+    .product-price-orig {
+      font-size: 0.82rem;
+      color: var(--text-light);
+      text-decoration: line-through;
+    }
+    .product-card-footer {
+      margin-top: auto;
+      display: flex;
+      gap: 8px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace">
+      <!-- Search Hero -->
+      <div class="search-hero">
+        <div style="margin-bottom: 14px;">
+          <h1 style="font-size: 1.5rem; font-weight: 800; color: var(--text-main); margin-bottom: 4px;">Khách mua sắm · Tra cứu sản phẩm &amp; Vị trí kệ</h1>
+          <p style="color: var(--text-muted); font-size: 0.88rem;">Tìm theo tên món hàng, mã SKU, thương hiệu hoặc số kệ để nhận hướng dẫn chỉ đường ngay trong siêu thị.</p>
+        </div>
+
+        <div class="search-hero-input">
+          <span style="font-size: 1.25rem;">🔍</span>
+          <input type="text" id="shopper-search-input" placeholder="Nhập tên sản phẩm (VD: Dầu ăn Simply, Nước mắm Nam Ngư, Mì Hảo Hảo...)" autocomplete="off">
+          <button class="btn btn-primary" onclick="applyFilters()" style="padding: 8px 18px;">Tìm kiếm</button>
+        </div>
+
+        <div class="search-suggestions">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Gợi ý phổ biến:</span>
+          <span class="suggestion-chip" onclick="quickSearch('Dầu ăn Simply')">🫗 Dầu ăn Simply (Hết hàng)</span>
+          <span class="suggestion-chip" onclick="quickSearch('Gạo ST25')">🌾 Gạo ST25</span>
+          <span class="suggestion-chip" onclick="quickSearch('Hảo Hảo')">🍜 Mì Hảo Hảo</span>
+          <span class="suggestion-chip" onclick="quickSearch('Lavie')">💧 Nước khoáng Lavie</span>
+          <span class="suggestion-chip" onclick="quickSearch('Clear')">🧴 Dầu gội Clear</span>
+        </div>
+      </div>
+
+      <!-- Category Filter Tabs -->
+      <div class="category-tabs" id="category-tabs">
+        <button class="category-tab active" data-category="all" onclick="selectCategory('all', this)">🛒 Tất cả danh mục</button>
+        <button class="category-tab" data-category="Thực phẩm khô" onclick="selectCategory('Thực phẩm khô', this)">🌾 Thực phẩm khô</button>
+        <button class="category-tab" data-category="Đồ uống" onclick="selectCategory('Đồ uống', this)">🥤 Đồ uống &amp; Giải khát</button>
+        <button class="category-tab" data-category="Gia vị" onclick="selectCategory('Gia vị', this)">🧂 Gia vị nấu nướng</button>
+        <button class="category-tab" data-category="Chăm sóc cá nhân" onclick="selectCategory('Chăm sóc cá nhân', this)">🧴 Chăm sóc cá nhân</button>
+        <button class="category-tab" data-category="Gia dụng" onclick="selectCategory('Gia dụng', this)">🧹 Đồ dùng gia đình</button>
+        <button class="category-tab" data-category="Bánh kẹo" onclick="selectCategory('Bánh kẹo', this)">🍪 Bánh kẹo &amp; Ăn vặt</button>
+      </div>
+
+      <!-- Filter Controls Bar -->
+      <div class="card card-pad" style="margin-bottom: 20px; padding: 14px 20px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 14px;">
+          <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+            <!-- Lọc Khu vực -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Khu vực:</label>
+              <select id="filter-zone" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyFilters()">
+                <option value="all">Tất cả khu vực</option>
+                <option value="Z-A">Khu A – Thực phẩm khô</option>
+                <option value="Z-B">Khu B – Đồ uống</option>
+                <option value="Z-C">Khu C – Mỹ phẩm</option>
+                <option value="Z-D">Khu D – Gia dụng</option>
+                <option value="Z-E">Khu E – Bánh kẹo</option>
+              </select>
+            </div>
+
+            <!-- Lọc Tình trạng hàng -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Tình trạng:</label>
+              <select id="filter-stock" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyFilters()">
+                <option value="all">Tất cả</option>
+                <option value="in_stock">Còn hàng trên kệ</option>
+                <option value="low_stock">Sắp hết hàng</option>
+                <option value="out_of_stock">Hết hàng (Có AI gợi ý)</option>
+              </select>
+            </div>
+
+            <!-- Lọc Thương hiệu -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Thương hiệu:</label>
+              <select id="filter-brand" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyFilters()">
+                <option value="all">Tất cả thương hiệu</option>
+              </select>
+            </div>
+
+            <!-- Khoảng giá -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Giá dưới:</label>
+              <select id="filter-maxprice" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyFilters()">
+                <option value="">Tất cả mức giá</option>
+                <option value="50000">Dưới 50.000 đ</option>
+                <option value="100000">Dưới 100.000 đ</option>
+                <option value="200000">Dưới 200.000 đ</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 0.82rem; color: var(--text-muted);" id="result-count-label">Đang tải...</span>
+            <select id="filter-sort" class="form-control" style="width: auto; padding: 6px 10px; font-size: 0.82rem;" onchange="applyFilters()">
+              <option value="name_asc">Tên: A → Z</option>
+              <option value="price_asc">Giá: Thấp đến cao</option>
+              <option value="price_desc">Giá: Cao đến thấp</option>
+              <option value="stock_desc">Tồn kho nhiều nhất</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Grid -->
+      <div id="product-results-grid" class="product-catalog-grid">
+        <!-- Renders via JS -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let activeCategory = 'all';
+
+    document.addEventListener('DOMContentLoaded', () => {
+      populateBrandOptions();
+      
+      // Kiểm tra URL param nếu có query
+      const urlParams = new URLSearchParams(window.location.search);
+      const q = urlParams.get('q');
+      if (q) {
+        document.getElementById('shopper-search-input').value = q;
+      }
+      const cat = urlParams.get('category');
+      if (cat) {
+        activeCategory = cat;
+        const targetTab = document.querySelector(`[data-category="${cat}"]`);
+        if (targetTab) selectCategory(cat, targetTab);
+      }
+
+      applyFilters();
+
+      // Enter to search
+      document.getElementById('shopper-search-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applyFilters();
+      });
+    });
+
+    function populateBrandOptions() {
+      const brandSelect = document.getElementById('filter-brand');
+      const products = SS_Store.all('products');
+      const brands = [...new Set(products.map(p => p.brand).filter(Boolean))].sort();
+      brands.forEach(b => {
+        const opt = document.createElement('option');
+        opt.value = b;
+        opt.textContent = b;
+        brandSelect.appendChild(opt);
+      });
+    }
+
+    function selectCategory(category, tabElement) {
+      activeCategory = category;
+      document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+      if (tabElement) tabElement.classList.add('active');
+      applyFilters();
+    }
+
+    function quickSearch(keyword) {
+      document.getElementById('shopper-search-input').value = keyword;
+      applyFilters();
+    }
+
+    function applyFilters() {
+      const query = document.getElementById('shopper-search-input').value;
+      const zoneId = document.getElementById('filter-zone').value;
+      const stock = document.getElementById('filter-stock').value;
+      const brand = document.getElementById('filter-brand').value;
+      const maxPrice = document.getElementById('filter-maxprice').value;
+      const sortBy = document.getElementById('filter-sort').value;
+
+      const results = SS_Store.searchProducts({
+        query,
+        category: activeCategory,
+        zoneId,
+        stock,
+        brand,
+        maxPrice,
+        sortBy
+      });
+
+      renderProducts(results);
+    }
+
+    function renderProducts(products) {
+      const container = document.getElementById('product-results-grid');
+      const countLabel = document.getElementById('result-count-label');
+      countLabel.textContent = `Tìm thấy ${products.length} sản phẩm`;
+
+      if (!products.length) {
+        container.innerHTML = `
+          <div class="state-empty" style="grid-column: 1 / -1; background-color: var(--bg-card); border-radius: var(--radius-xl); border: 1px dashed var(--border-light);">
+            <div class="state-empty-icon">🔍</div>
+            <div class="state-empty-title">Không tìm thấy sản phẩm phù hợp</div>
+            <div class="state-empty-desc">Thử tìm kiếm với từ khóa khác, hoặc đặt lại các tiêu chí bộ lọc thương hiệu, khu vực.</div>
+            <button class="btn btn-secondary" onclick="resetAllFilters()">Xóa tất cả bộ lọc</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = products.map(p => {
+        let stockBadge = '';
+        if (p.stock === 0 || p.status === 'out_of_stock') {
+          stockBadge = '<span class="badge badge-danger product-stock-tag"><span class="badge-dot"></span> Hết hàng trên kệ</span>';
+        } else if (p.status === 'low_stock' || p.stock <= p.minStock) {
+          stockBadge = `<span class="badge badge-warning product-stock-tag"><span class="badge-dot"></span> Sắp hết (còn ${p.stock} ${p.unit})</span>`;
+        } else {
+          stockBadge = `<span class="badge badge-success product-stock-tag"><span class="badge-dot"></span> Còn hàng (${p.stock} ${p.unit})</span>`;
+        }
+
+        const isOutOfStock = p.stock === 0 || p.status === 'out_of_stock';
+
+        return `
+          <div class="product-card">
+            <div class="product-card-img-box">
+              <img src="${p.image}" alt="${p.name}" class="product-card-img" loading="lazy">
+              ${stockBadge}
+              <div class="product-shelf-tag">📍 Kệ ${p.shelfCode} · ${p.zoneName}</div>
+            </div>
+            <div class="product-card-body">
+              <div class="product-brand">${p.brand || p.category}</div>
+              <div class="product-name" title="${p.name}">${p.name}</div>
+              <div class="product-price-box">
+                <span class="product-price">${SS_App.formatMoney(p.price)}</span>
+                ${p.originalPrice ? `<span class="product-price-orig">${SS_App.formatMoney(p.originalPrice)}</span>` : ''}
+              </div>
+              <div class="product-card-footer">
+                <a href="shopper-product-location.html?sku=${p.sku}" class="btn btn-primary btn-sm" style="flex:1">
+                  <span>📍</span>
+                  <span>Xem vị trí</span>
+                </a>
+                ${isOutOfStock ? `
+                  <a href="shopper-product-alternatives.html?sku=${p.sku}" class="btn btn-outline-primary btn-sm" style="flex:1;background-color:#f0fdfa;border-color:var(--primary-border)" title="AI Gợi ý sản phẩm thay thế">
+                    <span>✨</span>
+                    <span>Gợi ý thay thế</span>
+                  </a>
+                ` : `
+                  <button class="btn btn-secondary btn-sm" onclick="SS_App.toast('Đã thêm “${p.name}” vào danh sách mua!', 'success')" title="Thêm vào danh sách">
+                    <span>＋</span>
+                  </button>
+                `}
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function resetAllFilters() {
+      document.getElementById('shopper-search-input').value = '';
+      document.getElementById('filter-zone').value = 'all';
+      document.getElementById('filter-stock').value = 'all';
+      document.getElementById('filter-brand').value = 'all';
+      document.getElementById('filter-maxprice').value = '';
+      selectCategory('all', document.querySelector('[data-category="all"]'));
+    }
+  </script>
+</body>
+</html>
