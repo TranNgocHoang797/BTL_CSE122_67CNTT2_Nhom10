@@ -184,3 +184,5 @@ d:\bai\BTL\
 | SV3 | Trần Ngọc Hoàng | 2451271119 | 66ANM1 | Quản lý cửa hàng: Bảng điều hành trung tâm, Kanban điều phối bổ sung hàng, Phân tích bán lẻ & AI Insights. Quản trị viên: Quản lý người dùng. |
 
 Chi tiết mục tiêu, nhiệm vụ, CRUD/trạng thái, tính năng AI và công việc dự kiến của từng màn hình xem tại [Bảng kiểm kê màn hình SmartShelf](./BANG_KIEM_KE_MAN_HINH.md).
+Link xem onl:
+smartshelf-inky.vercel.app
