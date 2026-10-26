@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kiểm kê kệ hàng · SmartShelf Nhân viên</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .audit-selector-box {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 20px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+    .qty-counter-input {
+      display: inline-flex;
+      align-items: center;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      background-color: var(--bg-card);
+      overflow: hidden;
+    }
+    .qty-btn {
+      background: var(--bg-subtle);
+      border: none;
+      width: 32px;
+      height: 32px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-main);
+    }
+    .qty-btn:hover {
+      background-color: var(--border-light);
+    }
+    .qty-val-input {
+      width: 48px;
+      text-align: center;
+      border: none;
+      font-weight: 700;
+      font-size: 0.9rem;
+      outline: none;
+      background-color: transparent;
+      color: var(--text-main);
+    }
+    #recent-checks-tbody .badge {
+      height: 24px;
+      white-space: nowrap;
+    }
+    .recent-checks-table {
+      min-width: 1120px;
+    }
+    .recent-checks-table .note-column {
+      width: 270px;
+      min-width: 270px;
+      max-width: 300px;
+      white-space: normal;
+    }
+  </style>
+</head>
+<body>
+  <!-- Sidebar -->
+  <div id="sidebar-slot"></div>
+
+  <div class="ss-app-container">
+    <!-- Header -->
+    <div id="header-slot"></div>
+
+    <main class="ss-main-workspace">
+      <!-- Page Header -->
+      <div class="ss-page-head">
+        <div class="ss-page-title-box">
+          <h1>Nhân viên cửa hàng · Phiếu kiểm kê kệ hàng (Shelf Check Audit)</h1>
+          <p class="ss-page-subtitle">Kiểm đếm thực tế sản phẩm trên từng khay kệ, đối chiếu số liệu hệ thống để phát hiện hư hỏng, thiếu hàng hoặc đặt nhầm vị trí.</p>
+        </div>
+        <div class="ss-page-actions">
+          <button class="btn btn-secondary" onclick="runAiShelfAnomalyCheck()">
+            <span>🧠</span>
+            <span>Chạy AI quét bất thường kệ này</span>
+          </button>
+          <button class="btn btn-primary" onclick="submitShelfAudit()">
+            <span>✓</span>
+            <span>Nộp phiếu kiểm kê</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Shelf Selector Bar -->
+      <div class="audit-selector-box">
+        <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
+          <div>
+            <label style="font-size: 0.78rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Chọn kệ cần kiểm kê:</label>
+            <div style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+              <select id="shelf-select" class="form-control" style="width: 220px; font-weight: 700;" onchange="loadShelfProducts(this.value)">
+                <!-- Populated by JS -->
+              </select>
+            </div>
+          </div>
+
+          <div style="padding-left: 16px; border-left: 1px solid var(--border-light);">
+            <div style="font-size: 0.78rem; color: var(--text-muted);">Vị trí: <strong id="shelf-info-loc">Khu A · Lối 1-4</strong></div>
+            <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 2px;">
+              Lần kiểm kê trước: <strong id="shelf-info-last">04/10/2026 08:30</strong>
+            </div>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <span class="badge badge-info" id="shelf-status-tag">Trạng thái: Cần kiểm kê</span>
+          <button class="btn btn-secondary btn-sm" onclick="resetFormToSystemQty()">Đặt lại theo hệ thống</button>
+        </div>
+      </div>
+
+      <!-- Audit Comparison Table -->
+      <div class="card card-pad" style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main);">Danh mục mặt hàng trưng bày trên kệ</h2>
+          <span style="font-size: 0.82rem; color: var(--text-muted);">Nhập số lượng đếm được thực tế tại chỗ</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 50px;">Ảnh</th>
+                <th>Sản phẩm &amp; SKU</th>
+                <th style="width: 120px;">Vị trí tầng / khay</th>
+                <th style="text-align: center; width: 110px;">Hệ thống dự kiến</th>
+                <th style="text-align: center; width: 150px;">Thực tế kiểm đếm</th>
+                <th style="text-align: center; width: 100px;">Chênh lệch</th>
+                <th style="width: 180px;">Tình trạng phát hiện</th>
+                <th>Ghi chú hiện trường</th>
+              </tr>
+            </thead>
+            <tbody id="audit-table-body">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border-light); flex-wrap: wrap; gap: 10px;">
+          <div style="font-size: 0.85rem; color: var(--text-secondary);">
+            Người thực hiện: <strong id="auditor-name">Lê Văn Tùng (Nhân viên ca sáng)</strong>
+          </div>
+          <div style="display: flex; gap: 10px;">
+            <button class="btn btn-secondary" onclick="saveDraftAudit()">Lưu bản nháp</button>
+            <button class="btn btn-primary" onclick="submitShelfAudit()">Nộp phiếu kiểm kê</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lịch sử các phiếu kiểm kê gần đây -->
+      <div class="card card-pad">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+          <div>
+            <h2 style="font-size: 1.1rem; font-weight: 700; color: var(--text-main); margin-bottom: 2px;">Lịch sử phiếu kiểm kê kệ hàng gần đây</h2>
+            <p style="font-size: 0.82rem; color: var(--text-muted);">Các phiếu đã nộp, đang chờ quản lý phê duyệt hoặc bị từ chối cần bổ sung thông tin.</p>
+          </div>
+        </div>
+
+        <div class="table-responsive">
+          <table class="data-table recent-checks-table">
+            <thead>
+              <tr>
+                <th>Mã phiếu</th>
+                <th>Kệ hàng</th>
+                <th>Sản phẩm kiểm tra</th>
+                <th style="text-align: center;">Hệ thống</th>
+                <th style="text-align: center;">Thực tế</th>
+                <th>Tình trạng</th>
+                <th class="note-column">Ghi chú</th>
+                <th>Trạng thái duyệt</th>
+                <th>Thời gian</th>
+              </tr>
+            </thead>
+            <tbody id="recent-checks-tbody">
+              <!-- Rendered by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/data.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/ai.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    let activeShelfCode = 'A-02';
+    let currentAuditRows = [];
+    let currentDraftId = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      populateShelfDropdown();
+      
+      const urlParams = new URLSearchParams(window.location.search);
+      const requestedShelf = urlParams.get('shelf');
+      const requestedZone = urlParams.get('zone');
+      const shelves = SS_Store.all('shelves');
+      if (shelves.some(shelf => shelf.code === requestedShelf)) {
+        activeShelfCode = requestedShelf;
+      } else if (requestedZone) {
+        const firstZoneShelf = shelves.find(shelf => shelf.zoneId === requestedZone);
+        if (firstZoneShelf) activeShelfCode = firstZoneShelf.code;
+      }
+
+      document.getElementById('shelf-select').value = activeShelfCode;
+      loadShelfProducts(activeShelfCode);
+      renderRecentChecksTable();
+    });
+
+    function populateShelfDropdown() {
+      const select = document.getElementById('shelf-select');
+      const shelves = SS_Store.all('shelves');
+      select.innerHTML = shelves.map(s => `
+        <option value="${s.code}">Kệ ${s.code} · ${s.zoneName}</option>
+      `).join('');
+    }
+
+    function loadShelfProducts(shelfCode) {
+      activeShelfCode = shelfCode;
+      const shelf = SS_Store.find('shelves', s => s.code === shelfCode);
+      const zone = shelf ? SS_Store.find('zones', z => z.id === shelf.zoneId) : null;
+      const existingDrafts = SS_Store.all('shelfChecks')
+        .filter(check => check.status === 'draft' && check.shelfCode === shelfCode)
+        .sort((a, b) => new Date(b.checkedAt || 0) - new Date(a.checkedAt || 0));
+      const latestDraft = existingDrafts[0];
+      currentDraftId = latestDraft ? latestDraft.draftBatchId || null : null;
+      const savedRows = currentDraftId
+        ? existingDrafts.filter(check => check.draftBatchId === currentDraftId)
+        : latestDraft ? [latestDraft] : [];
+
+      if (shelf) {
+        document.getElementById('shelf-info-loc').textContent = `${shelf.zoneName} · ${zone ? zone.aisle : 'Lối đi chính'}`;
+        document.getElementById('shelf-info-last').textContent = SS_App.formatDate(shelf.lastCheckedAt);
+      }
+
+      const products = SS_Store.all('products').filter(p => p.shelfCode === shelfCode);
+      
+      if (!products.length) {
+        // Nếu kệ trống, lấy 1-2 sản phẩm mẫu để nhân viên kiểm
+        currentAuditRows = [{
+          sku: 'SKU-SAMPLE',
+          name: 'Chưa có sản phẩm gán cố định cho kệ này',
+          image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?auto=format&fit=crop&w=150&q=80',
+          shelfLevel: 'Tầng 1',
+          shelfPosition: 'Khay 01',
+          systemQty: 0,
+          countedQty: 0,
+          condition: 'normal',
+          note: ''
+        }];
+      } else {
+        currentAuditRows = products.map(p => ({
+          sku: p.sku,
+          name: p.name,
+          image: p.image,
+          shelfLevel: p.shelfLevel || 'Tầng 2',
+          shelfPosition: p.shelfPosition || 'Khay 01',
+          systemQty: p.stock,
+          countedQty: p.stock, // mặc định bằng hệ thống
+          condition: p.stock === 0 ? 'missing' : p.stock <= p.minStock ? 'low' : 'normal',
+          note: ''
+        }));
+      }
+
+      currentAuditRows = currentAuditRows.map(row => {
+        const saved = savedRows.find(check => check.sku === row.sku);
+        return saved ? {
+          ...row,
+          countedQty: Number(saved.actualQty) || 0,
+          condition: saved.condition || row.condition,
+          note: saved.note || ''
+        } : row;
+      });
+      renderAuditTable();
+    }
+
+    function renderAuditTable() {
+      const tbody = document.getElementById('audit-table-body');
+      tbody.innerHTML = currentAuditRows.map((row, index) => {
+        const diff = row.countedQty - row.systemQty;
+        let diffBadge = '';
+        if (diff === 0) {
+          diffBadge = '<span class="badge badge-success">Khớp (0)</span>';
+        } else if (diff < 0) {
+          diffBadge = `<span class="badge badge-danger">Thiếu (${diff})</span>`;
+        } else {
+          diffBadge = `<span class="badge badge-warning">Thừa (+${diff})</span>`;
+        }
+
+        return `
+          <tr>
+            <td>
+              <img src="${row.image}" style="width:40px;height:40px;border-radius:6px;object-fit:cover;">
+            </td>
+            <td>
+              <strong>${row.name}</strong>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${row.sku}</div>
+            </td>
+            <td style="font-size:0.82rem;color:var(--text-secondary)">
+              <div>${row.shelfLevel}</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${row.shelfPosition}</div>
+            </td>
+            <td style="text-align:center;font-weight:700;font-size:1rem;color:var(--text-secondary);">
+              ${row.systemQty}
+            </td>
+            <td style="text-align:center;">
+              <div class="qty-counter-input">
+                <button type="button" class="qty-btn" onclick="updateRowQty(${index}, -1)">−</button>
+                <input type="number" class="qty-val-input" value="${row.countedQty}" min="0" max="200" step="1" onchange="setRowQty(${index}, this.value)">
+                <button type="button" class="qty-btn" onclick="updateRowQty(${index}, 1)">+</button>
+              </div>
+            </td>
+            <td style="text-align:center;">
+              ${diffBadge}
+            </td>
+            <td>
+              <select class="form-control" style="font-size:0.8rem;padding:4px 8px" onchange="setRowCondition(${index}, this.value)">
+                <option value="normal" ${row.condition === 'normal' ? 'selected' : ''}>✓ Bình thường</option>
+                <option value="missing" ${row.condition === 'missing' ? 'selected' : ''}>⚠️ Thiếu hàng / Hết sạch</option>
+                <option value="low" ${row.condition === 'low' ? 'selected' : ''}>📉 Sắp hết hàng</option>
+                <option value="damaged" ${row.condition === 'damaged' ? 'selected' : ''}>💥 Hư hỏng / Móp méo</option>
+                <option value="misplaced" ${row.condition === 'misplaced' ? 'selected' : ''}>🔀 Đặt sai kệ / Lẫn hàng</option>
+              </select>
+            </td>
+            <td>
+              <input type="text" class="form-control" style="font-size:0.8rem;padding:5px 8px" placeholder="Ghi chú thêm..." value="${row.note}" onchange="setRowNote(${index}, this.value)">
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function updateRowQty(index, delta) {
+      currentAuditRows[index].countedQty = Math.min(200, Math.max(0, currentAuditRows[index].countedQty + delta));
+      renderAuditTable();
+    }
+
+    function setRowQty(index, val) {
+      const quantity = Number(val);
+      if (!Number.isInteger(quantity) || quantity < 0 || quantity > 200) {
+        SS_App.toast('Số lượng kiểm đếm phải là số nguyên từ 0 đến 200.', 'warning');
+        renderAuditTable();
+        return;
+      }
+      currentAuditRows[index].countedQty = quantity;
+      renderAuditTable();
+    }
+
+    function setRowCondition(index, cond) {
+      currentAuditRows[index].condition = cond;
+    }
+
+    function setRowNote(index, note) {
+      currentAuditRows[index].note = note;
+    }
+
+    function resetFormToSystemQty() {
+      currentAuditRows.forEach(r => {
+        r.countedQty = r.systemQty;
+        r.condition = 'normal';
+      });
+      renderAuditTable();
+      SS_App.toast('Đã hoàn nguyên số lượng thực tế bằng số liệu hệ thống.', 'info');
+    }
+
+    function submitShelfAudit() {
+      const auditor = SS_Store.getCurrentUser();
+      const shelf = SS_Store.find('shelves', item => item.code === activeShelfCode);
+      const zone = shelf ? SS_Store.getById('zones', shelf.zoneId) : null;
+      const checkedAt = new Date().toISOString();
+      currentAuditRows.forEach(row => {
+        const diff = row.countedQty - row.systemQty;
+        const checkData = {
+          shelfCode: activeShelfCode,
+          zoneId: shelf ? shelf.zoneId : '',
+          zoneName: shelf ? shelf.zoneName : zone ? zone.name : '',
+          sku: row.sku,
+          productName: row.name,
+          expectedQty: row.systemQty,
+          actualQty: row.countedQty,
+          diff: diff,
+          condition: row.condition,
+          conditionLabel: getConditionLabel(row.condition),
+          note: row.note || (diff !== 0 ? `Chênh lệch ${diff} món so với máy chủ POS` : 'Kiểm kê định kỳ khớp 100%'),
+          auditorId: auditor.id,
+          auditorName: auditor.name,
+          status: 'submitted',
+          checkedAt
+        };
+        const draft = currentDraftId
+          ? SS_Store.find('shelfChecks', check => check.draftBatchId === currentDraftId && check.sku === row.sku)
+          : null;
+        if (draft) {
+          SS_Store.update('shelfChecks', draft.id, checkData);
+        } else {
+          SS_Store.insert('shelfChecks', {
+            code: 'CK-' + Date.now().toString(36).toUpperCase(),
+            ...checkData
+          });
+        }
+
+        // Cập nhật lại tồn kho sản phẩm tương ứng nếu có
+        const prod = SS_Store.find('products', p => p.sku === row.sku);
+        if (prod) {
+          SS_Store.update('products', prod.id, {
+            stock: row.countedQty,
+            status: row.countedQty === 0 ? 'out_of_stock' : row.countedQty <= prod.minStock ? 'low_stock' : 'in_stock'
+          });
+        }
+      });
+
+      currentDraftId = null;
+      if (shelf) {
+        const currentItems = SS_Store.all('products')
+          .filter(product => product.shelfCode === activeShelfCode)
+          .reduce((total, product) => total + product.stock, 0);
+        const fillRate = currentItems / (shelf.capacity || 1);
+        SS_Store.update('shelves', shelf.id, {
+          currentItems,
+          status: currentItems === 0 ? 'empty' : fillRate <= 0.2 ? 'critical' : fillRate <= 0.4 ? 'low' : 'normal',
+          lastCheckedAt: checkedAt
+        });
+      }
+
+      SS_App.toast(`Đã nộp thành công phiếu kiểm kê cho Kệ ${activeShelfCode}! Chờ quản lý phê duyệt.`, 'success');
+      renderRecentChecksTable();
+    }
+
+    function saveDraftAudit() {
+      if (!currentAuditRows.length) {
+        SS_App.toast('Không có sản phẩm để lưu bản nháp kiểm kê.', 'warning');
+        return;
+      }
+
+      if (!currentDraftId) currentDraftId = `AUDIT-${Date.now().toString(36).toUpperCase()}`;
+      const auditor = SS_Store.getCurrentUser();
+      const shelf = SS_Store.find('shelves', item => item.code === activeShelfCode);
+      const zone = shelf ? SS_Store.getById('zones', shelf.zoneId) : null;
+      const checkedAt = new Date().toISOString();
+
+      currentAuditRows.forEach(row => {
+        const diff = row.countedQty - row.systemQty;
+        const draftData = {
+          shelfCode: activeShelfCode,
+          zoneId: shelf ? shelf.zoneId : '',
+          zoneName: shelf ? shelf.zoneName : zone ? zone.name : '',
+          sku: row.sku,
+          productName: row.name,
+          expectedQty: row.systemQty,
+          actualQty: row.countedQty,
+          diff,
+          condition: row.condition,
+          conditionLabel: getConditionLabel(row.condition),
+          note: row.note,
+          auditorId: auditor.id,
+          auditorName: auditor.name,
+          status: 'draft',
+          draftBatchId: currentDraftId,
+          checkedAt
+        };
+        const existing = SS_Store.find('shelfChecks', check =>
+          check.status === 'draft' && check.draftBatchId === currentDraftId && check.sku === row.sku
+        );
+        if (existing) {
+          SS_Store.update('shelfChecks', existing.id, draftData);
+        } else {
+          SS_Store.insert('shelfChecks', {
+            code: 'CK-' + Date.now().toString(36).toUpperCase(),
+            ...draftData
+          });
+        }
+      });
+
+      renderRecentChecksTable();
+      SS_App.toast('Đã lưu bản nháp kiểm kê vào LocalStorage. Bạn có thể tiếp tục sau.', 'success');
+    }
+
+    function getConditionLabel(cond) {
+      switch(cond) {
+        case 'missing': return 'Hết sạch / Thiếu';
+        case 'low': return 'Sắp hết hàng';
+        case 'damaged': return 'Hư hỏng / Móp';
+        case 'misplaced': return 'Đặt sai kệ';
+        default: return 'Bình thường';
+      }
+    }
+
+    function renderRecentChecksTable() {
+      const tbody = document.getElementById('recent-checks-tbody');
+      const checks = SS_Store.all('shelfChecks') || [];
+
+      tbody.innerHTML = checks.slice(0, 7).map(c => {
+        let statusBadge = '';
+        if (c.status === 'approved') statusBadge = '<span class="badge badge-success">✓ Đã duyệt</span>';
+        else if (c.status === 'submitted') statusBadge = '<span class="badge badge-warning">⏳ Chờ duyệt</span>';
+        else if (c.status === 'rejected') statusBadge = '<span class="badge badge-danger">✕ Bị từ chối</span>';
+        else statusBadge = '<span class="badge badge-neutral">📝 Bản nháp</span>';
+
+        return `
+          <tr>
+            <td><strong>${c.code}</strong></td>
+            <td><span class="badge badge-info">Kệ ${c.shelfCode}</span></td>
+            <td>
+              <strong>${c.productName}</strong>
+              <div style="font-size:0.75rem;color:var(--text-muted)">${c.sku}</div>
+            </td>
+            <td style="text-align:center">${c.expectedQty}</td>
+            <td style="text-align:center;font-weight:700">${c.actualQty}</td>
+            <td><span class="badge ${c.condition === 'normal' ? 'badge-success' : 'badge-danger'}">${c.conditionLabel || c.condition}</span></td>
+            <td class="note-column" style="font-size:0.8rem;color:var(--text-secondary)">${c.note}</td>
+            <td>${statusBadge}</td>
+            <td style="font-size:0.75rem;color:var(--text-muted)">${SS_App.formatDate(c.checkedAt)}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    async function runAiShelfAnomalyCheck() {
+      SS_App.toast(`Đang kích hoạt AI quét bất thường trên Kệ ${activeShelfCode}...`, 'info');
+      try {
+        const res = await SS_AI.detectShelfAnomalies();
+        SS_App.showModal({
+          title: `Kết quả AI quét bất thường: Kệ ${activeShelfCode}`,
+          body: `
+            <div style="background:#ecfdf5;border:1px solid var(--primary-border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px">
+              <strong style="color:var(--primary)">✓ Độ tin cậy thuật toán: ${res.confidenceScore}%</strong>
+              <p style="font-size:0.84rem;color:var(--text-secondary);margin:4px 0 0">
+                Thuật toán đã đối soát camera kiểm đếm và lưu lượng hóa đơn POS 24 giờ qua.
+              </p>
+            </div>
+            <div style="font-size:0.88rem;color:var(--text-main);line-height:1.5">
+              ${activeShelfCode === 'A-02' ? `
+                <p><strong>Cảnh báo phát hiện:</strong> Mặt hàng <em>Dầu ăn Simply 1L</em> đã hết sạch 4 tiếng trước nhưng chưa có phiếu bổ sung tương ứng từ kho. Tỷ lệ khách rời đi không mua đạt 28%.</p>
+                <p style="color:var(--primary);font-weight:700">Khuyến nghị: Lập tức phát lệnh Restock bổ sung 20 chai từ kho phụ.</p>
+              ` : `
+                <p>Kệ ${activeShelfCode} không ghi nhận dấu hiệu thất thoát bất thường. Lưu lượng kiểm đếm ổn định.</p>
+              `}
+            </div>
+          `,
+          footer: `
+            <button class="btn btn-secondary" onclick="SS_App.closeModal()">Đóng</button>
+            <button class="btn btn-primary" onclick="SS_App.closeModal(); SS_App.toast('Đã ghi nhận phân tích AI vào hồ sơ kiểm kê!', 'success');">Lưu phân tích</button>
+          `
+        });
+      } catch (e) {
+        SS_App.toast(e.message, 'error');
+      }
+    }
+  </script>
+</body>
+</html>
