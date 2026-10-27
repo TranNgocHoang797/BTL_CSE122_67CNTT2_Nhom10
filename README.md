@@ -185,4 +185,4 @@ d:\bai\BTL\
 
 Chi tiết mục tiêu, nhiệm vụ, CRUD/trạng thái, tính năng AI và công việc dự kiến của từng màn hình xem tại [Bảng kiểm kê màn hình SmartShelf](./BANG_KIEM_KE_MAN_HINH.md).
 Link xem onl:
-smartshelf-inky.vercel.app
+smartshelf-ecru.vercel.app
